@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosHeaders } from 'axios';
 import Cookies from 'js-cookie';
 
 class ApiClient {
@@ -6,18 +6,21 @@ class ApiClient {
 
   constructor() {
     this.axiosInstance = axios.create({
-      baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/yunkeji/api', // 后端API地址
+      baseURL: process.env.NEXT_PUBLIC_API_URL || '/yunkeji/api', // 使用环境变量或默认值
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
-      },
+      } as AxiosHeaders,
     });
 
     // 请求拦截器
     this.axiosInstance.interceptors.request.use(
       (config) => {
-        const token = Cookies.get('token');
+        const token = Cookies.get('token');  // 这里可能需要不同的调用方式
         if (token) {
+          if (!config.headers) {
+            config.headers = {} as AxiosHeaders;
+          }
           config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
@@ -66,7 +69,7 @@ class ApiClient {
     const response = await this.axiosInstance.post('/user/real-estate/query-with-files', data, {
       headers: {
         'Content-Type': 'multipart/form-data',
-      },
+      } as AxiosHeaders,
     });
     return response.data;
   }

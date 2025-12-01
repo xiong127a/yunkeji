@@ -46,13 +46,14 @@
                 <version>${mysql.version}</version>
             </dependency>
             
-            <!-- MyBatis Flex for Spring Boot 2.x -->
+            <!-- MyBatis Flex -->
             <dependency>
                 <groupId>com.mybatis-flex</groupId>
                 <artifactId>mybatis-flex-spring-boot-starter</artifactId>
                 <version>${mybatis-flex.version}</version>
             </dependency>
-            <!-- MyBatis Flex 注解处理器 -->
+            
+            <!-- MyBatis Flex Processor -->
             <dependency>
                 <groupId>com.mybatis-flex</groupId>
                 <artifactId>mybatis-flex-processor</artifactId>
@@ -120,5 +121,35 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        
+        <plugins>
+            <!-- Assembly Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>assembly.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <!-- Frontend Plugin -->
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>1.12.1</version>
+            </plugin>
+        </plugins>
     </build>
 </project>

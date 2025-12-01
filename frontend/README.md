@@ -102,3 +102,39 @@ this.axiosInstance = axios.create({
 1. 确保后端服务已启动并可访问
 2. 根据实际需求修改 API 地址
 3. 文件上传大小限制根据后端配置调整
+
+# 前端独立部署说明
+
+## 构建项目
+
+```bash
+npm run build
+```
+
+## 开发环境运行
+
+```bash
+npm run dev
+```
+
+## 生产环境运行
+
+```bash
+npm run start
+```
+
+## 环境变量配置
+
+前端默认运行在3000端口，API请求会代理到后端服务（默认http://localhost:8080）。
+
+如需自定义，请创建.env.local文件：
+
+```
+NEXT_PUBLIC_API_URL=http://your-backend-url
+```
+
+## 部署注意事项
+
+1. 前端项目构建完成后，将 `.next` 目录中的内容部署到Web服务器（如Nginx）
+2. 确保后端服务在独立的服务器上运行
+3. 配置反向代理将 `/api` 路径的请求转发到后端服务
