@@ -39,6 +39,7 @@
             <includes>
                 <include>yunkeji-boot-*-exec.jar</include>
             </includes>
+            <fileMode>0644</fileMode>
         </fileSet>
 
         <!-- 移除前端构建产物，前后端分离部署时不需要 -->

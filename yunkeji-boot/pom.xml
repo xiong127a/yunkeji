@@ -116,25 +116,28 @@
                 </executions>
             </plugin>
             
-            <!-- 资源复制插件 -->
+            <!-- 资源复制插件 - 复制前端构建产物到static目录 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>3.2.0</version>
                 <executions>
-                    <!-- 复制前端构建产物到配置目录 -->
+                    <!-- 复制前端构建产物到static目录 -->
                     <execution>
-                        <id>copy-frontend-config</id>
+                        <id>copy-frontend-resources</id>
                         <phase>process-classes</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.outputDirectory}/config/front</outputDirectory>
+                            <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${project.basedir}/../frontend/.next</directory>
+                                    <directory>${project.basedir}/../frontend/dist</directory>
                                     <filtering>false</filtering>
+                                    <includes>
+                                        <include>**/*</include>
+                                    </includes>
                                 </resource>
                             </resources>
                         </configuration>

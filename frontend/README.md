@@ -1,140 +1,38 @@
-# 云科技不动产查询系统前端
+# frontend
 
-这是一个基于 Next.js 14 + TypeScript + Ant Design 的前端项目。
+This template should help get you started developing with Vue 3 in Vite.
 
-## 技术栈
+## Recommended IDE Setup
 
-- Next.js 14 (App Router)
-- TypeScript
-- Ant Design 5
-- Axios
-- js-cookie
+[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
 
-## 项目结构
+## Recommended Browser Setup
 
-```
-src/
-├── app/
-│   ├── api/           # API 客户端
-│   ├── components/    # 公共组件
-│   ├── layouts/       # 布局组件
-│   ├── pages/         # 页面组件
-│   ├── public/        # 静态资源
-│   ├── styles/        # 样式文件
-│   ├── utils/         # 工具函数
-│   ├── types/         # TypeScript 类型定义
-│   ├── layout.tsx     # 根布局
-│   └── page.tsx       # 首页
-```
+- Chromium-based browsers (Chrome, Edge, Brave, etc.):
+  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
+  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
+- Firefox:
+  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
+  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
 
-## 功能特性
+## Customize configuration
 
-1. 用户认证（登录/注册）
-2. 不动产信息查询
-3. 文件上传（PDF、图片等）
-4. 查询记录管理
-5. 查询结果查看
+See [Vite Configuration Reference](https://vite.dev/config/).
 
-## 环境要求
+## Project Setup
 
-- Node.js >= 16.14.0
-- npm 或 yarn
-
-## 安装依赖
-
-```bash
+```sh
 npm install
-# 或
-yarn install
 ```
 
-## 开发环境运行
+### Compile and Hot-Reload for Development
 
-```bash
-npm run dev
-# 或
-yarn dev
-```
-
-访问 http://localhost:3000 查看应用。
-
-## 构建生产版本
-
-```bash
-npm run build
-# 或
-yarn build
-```
-
-## 运行生产版本
-
-```bash
-npm start
-# 或
-yarn start
-```
-
-## 配置
-
-在 `src/app/api/client.ts` 中配置后端 API 地址：
-
-```typescript
-this.axiosInstance = axios.create({
-  baseURL: 'http://localhost:8080/api', // 后端API地址
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-```
-
-## 页面说明
-
-- `/` - 首页
-- `/login` - 登录页面
-- `/register` - 注册页面
-- `/dashboard` - 用户控制台
-- `/query` - 新建查询
-- `/query/[id]` - 查询详情
-
-## 注意事项
-
-1. 确保后端服务已启动并可访问
-2. 根据实际需求修改 API 地址
-3. 文件上传大小限制根据后端配置调整
-
-# 前端独立部署说明
-
-## 构建项目
-
-```bash
-npm run build
-```
-
-## 开发环境运行
-
-```bash
+```sh
 npm run dev
 ```
 
-## 生产环境运行
+### Compile and Minify for Production
 
-```bash
-npm run start
+```sh
+npm run build
 ```
-
-## 环境变量配置
-
-前端默认运行在3000端口，API请求会代理到后端服务（默认http://localhost:8080）。
-
-如需自定义，请创建.env.local文件：
-
-```
-NEXT_PUBLIC_API_URL=http://your-backend-url
-```
-
-## 部署注意事项
-
-1. 前端项目构建完成后，将 `.next` 目录中的内容部署到Web服务器（如Nginx）
-2. 确保后端服务在独立的服务器上运行
-3. 配置反向代理将 `/api` 路径的请求转发到后端服务

@@ -38,12 +38,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // 映射上传的文件
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:./uploads/", "file:/opt/yunkeji/uploads/");
+        
+        // 注意：不在这里配置 /yunkeji/** 的资源映射
+        // 让 IndexController 统一处理，以便支持 SPA 路由
     }
     
-    @Override
-    public void addViewControllers(ViewControllerRegistry registry) {
-        // 将根路径和/yunkeji路径重定向到/yunkeji/
-        registry.addViewController("/").setViewName("redirect:/yunkeji/");
-        registry.addViewController("/yunkeji").setViewName("redirect:/yunkeji/");
-    }
 }
