@@ -1,5 +1,6 @@
 package org.yun.common.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class RealEstateQueryRecordDTO {
@@ -15,6 +16,12 @@ public class RealEstateQueryRecordDTO {
     private String requestNo;
     
     private String status;
+    
+    private BigDecimal queryFee;
+    
+    private String payMode;
+    
+    private String payStatus;
     
     private String result;
     
@@ -69,6 +76,30 @@ public class RealEstateQueryRecordDTO {
     
     public void setStatus(String status) {
         this.status = status;
+    }
+    
+    public BigDecimal getQueryFee() {
+        return queryFee;
+    }
+    
+    public void setQueryFee(BigDecimal queryFee) {
+        this.queryFee = queryFee;
+    }
+    
+    public String getPayMode() {
+        return payMode;
+    }
+    
+    public void setPayMode(String payMode) {
+        this.payMode = payMode;
+    }
+    
+    public String getPayStatus() {
+        return payStatus;
+    }
+    
+    public void setPayStatus(String payStatus) {
+        this.payStatus = payStatus;
     }
     
     public String getResult() {

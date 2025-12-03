@@ -40,7 +40,7 @@ public class AuthServiceImpl implements AuthService {
             response.setSuccess(true);
             response.setMessage("登录成功");
             // 生成JWT token
-            String token = jwtUtil.generateToken(user.getId(), user.getUsername());
+            String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
             response.setToken(token);
             
             UserResponse userResponse = new UserResponse();
@@ -88,13 +88,17 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(request.getEmail());
         // 密码加密存储
         user.setPassword(hashPassword(request.getPassword()));
+        user.setRole("USER");
+        // 默认查询单价500，初始余额0
+        user.setQueryPrice(java.math.BigDecimal.valueOf(500));
+        user.setBalance(java.math.BigDecimal.ZERO);
         
         userMapper.insert(user);
         
         response.setSuccess(true);
         response.setMessage("注册成功");
         // 生成JWT token
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
         response.setToken(token);
         
         UserResponse userResponse = new UserResponse();

@@ -5,12 +5,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.yun.common.dto.PayOrderDTO;
 import org.yun.common.dto.RealEstateFileDTO;
 import org.yun.common.dto.RealEstateQueryRecordDTO;
 import org.yun.common.dto.RealEstateQueryRequest;
 import org.yun.common.dto.RealEstateQueryResponse;
+import org.yun.common.dto.UserResponse;
 import org.yun.common.util.JwtUtil;
 import org.yun.service.UserManagementService;
+import org.yun.service.UserService;
 
 import java.util.List;
 
@@ -24,6 +27,9 @@ public class UserManagementController {
     
     @Autowired
     private JwtUtil jwtUtil;
+    
+    @Autowired
+    private UserService userService;
     
     @PostMapping("/real-estate/query")
     @Operation(summary = "提交不动产查询请求")
@@ -46,6 +52,48 @@ public class UserManagementController {
         String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
         Long userId = jwtUtil.extractUserId(actualToken);
         return userManagementService.submitRealEstateQueryWithFiles(userId, request, files);
+    }
+    
+    @PostMapping("/real-estate/query-direct-pay")
+    @Operation(summary = "提交不动产查询请求（扫码直付）")
+    public org.yun.common.dto.DirectPayOrderResponse submitRealEstateQueryDirectPay(
+            @RequestHeader("Authorization") String token,
+            @RequestBody RealEstateQueryRequest request,
+            @RequestParam(defaultValue = "WECHAT") String payChannel) {
+        String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+        Long userId = jwtUtil.extractUserId(actualToken);
+        return userManagementService.createDirectPayQuery(userId, request, payChannel);
+    }
+    
+    @PostMapping("/real-estate/query-with-files-direct-pay")
+    @Operation(summary = "提交不动产查询请求（带文件，扫码直付）")
+    public org.yun.common.dto.DirectPayOrderResponse submitRealEstateQueryWithFilesDirectPay(
+            @RequestHeader("Authorization") String token,
+            @RequestPart("request") RealEstateQueryRequest request,
+            @RequestPart(value = "files", required = false) MultipartFile[] files,
+            @RequestParam(defaultValue = "WECHAT") String payChannel) {
+        String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+        Long userId = jwtUtil.extractUserId(actualToken);
+        return userManagementService.createDirectPayQueryWithFiles(userId, request, files, payChannel);
+    }
+    
+    @GetMapping("/pay/orders/pending")
+    @Operation(summary = "获取当前用户待支付的订单")
+    public List<PayOrderDTO> getPendingPayOrders(@RequestHeader("Authorization") String token) {
+        String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+        Long userId = jwtUtil.extractUserId(actualToken);
+        return userManagementService.getPendingPayOrders(userId);
+    }
+    
+    @PostMapping("/pay/orders/{orderId}/regenerate")
+    @Operation(summary = "重新生成扫码支付二维码")
+    public org.yun.common.dto.DirectPayOrderResponse regeneratePayOrder(
+            @RequestHeader("Authorization") String token,
+            @PathVariable Long orderId,
+            @RequestParam(required = false) String payChannel) {
+        String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+        Long userId = jwtUtil.extractUserId(actualToken);
+        return userManagementService.regeneratePayOrder(userId, orderId, payChannel);
     }
     
     @GetMapping("/real-estate/result/{requestNo}")
@@ -74,5 +122,13 @@ public class UserManagementController {
     @Operation(summary = "获取查询记录关联的文件")
     public List<RealEstateFileDTO> getQueryRecordFiles(@PathVariable Long recordId) {
         return userManagementService.getQueryRecordFiles(recordId);
+    }
+    
+    @GetMapping("/profile")
+    @Operation(summary = "获取当前登录用户的资料（含余额和查询单价）")
+    public UserResponse getCurrentUserProfile(@RequestHeader("Authorization") String token) {
+        String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+        Long userId = jwtUtil.extractUserId(actualToken);
+        return userService.getUserById(userId);
     }
 }

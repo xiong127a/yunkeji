@@ -20,6 +20,12 @@ public class RealEstateQueryRecord {
     
     private String status;
     
+    private java.math.BigDecimal queryFee;
+    
+    private String payMode;
+    
+    private String payStatus;
+    
     private String result;
     
     private java.util.Date createdAt;
@@ -73,6 +79,30 @@ public class RealEstateQueryRecord {
     
     public void setStatus(String status) {
         this.status = status;
+    }
+    
+    public java.math.BigDecimal getQueryFee() {
+        return queryFee;
+    }
+    
+    public void setQueryFee(java.math.BigDecimal queryFee) {
+        this.queryFee = queryFee;
+    }
+    
+    public String getPayMode() {
+        return payMode;
+    }
+    
+    public void setPayMode(String payMode) {
+        this.payMode = payMode;
+    }
+    
+    public String getPayStatus() {
+        return payStatus;
+    }
+    
+    public void setPayStatus(String payStatus) {
+        this.payStatus = payStatus;
     }
     
     public String getResult() {

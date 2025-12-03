@@ -11,6 +11,9 @@ public class UserTableDef extends TableDef {
     public final QueryColumn USERNAME = new QueryColumn(this, "username");
     public final QueryColumn EMAIL = new QueryColumn(this, "email");
     public final QueryColumn PASSWORD = new QueryColumn(this, "password");
+    public final QueryColumn ROLE = new QueryColumn(this, "role");
+    public final QueryColumn QUERY_PRICE = new QueryColumn(this, "query_price");
+    public final QueryColumn BALANCE = new QueryColumn(this, "balance");
     
     public UserTableDef() {
         super("yunkeji", "user");

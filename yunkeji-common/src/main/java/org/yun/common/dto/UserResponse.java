@@ -1,5 +1,7 @@
 package org.yun.common.dto;
 
+import java.math.BigDecimal;
+
 public class UserResponse {
     
     private Long id;
@@ -7,6 +9,12 @@ public class UserResponse {
     private String username;
     
     private String email;
+    
+    private String role;
+    
+    private BigDecimal queryPrice;
+    
+    private BigDecimal balance;
     
     // Getters and setters
     public Long getId() {
@@ -31,5 +39,29 @@ public class UserResponse {
     
     public void setEmail(String email) {
         this.email = email;
+    }
+    
+    public String getRole() {
+        return role;
+    }
+    
+    public void setRole(String role) {
+        this.role = role;
+    }
+    
+    public BigDecimal getQueryPrice() {
+        return queryPrice;
+    }
+    
+    public void setQueryPrice(BigDecimal queryPrice) {
+        this.queryPrice = queryPrice;
+    }
+    
+    public BigDecimal getBalance() {
+        return balance;
+    }
+    
+    public void setBalance(BigDecimal balance) {
+        this.balance = balance;
     }
 }

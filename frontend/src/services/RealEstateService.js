@@ -36,6 +36,41 @@ class RealEstateService {
     }
   }
 
+  // 提交不动产查询（扫码直付）
+  async submitQueryDirectPay (queryData, payChannel = 'WECHAT') {
+    try {
+      const response = await apiClient.post(`/user/real-estate/query-direct-pay?payChannel=${payChannel}`, queryData)
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  // 提交不动产查询（带文件，扫码直付）
+  async submitQueryWithFilesDirectPay (queryData, files, payChannel = 'WECHAT') {
+    try {
+      const formData = new FormData()
+      formData.append('request', new Blob([JSON.stringify(queryData)], {
+        type: 'application/json'
+      }))
+
+      if (files && files.length > 0) {
+        files.forEach((file) => {
+          formData.append('files', file)
+        })
+      }
+
+      const response = await apiClient.post(`/user/real-estate/query-with-files-direct-pay?payChannel=${payChannel}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
   // 获取用户的查询记录
   async getQueryRecords() {
     try {

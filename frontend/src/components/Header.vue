@@ -20,6 +20,7 @@
             <el-menu-item index="/">首页</el-menu-item>
             <el-menu-item index="/dashboard" v-if="isLoggedIn">控制台</el-menu-item>
             <el-menu-item index="/query" v-if="isLoggedIn">查询</el-menu-item>
+            <el-menu-item index="/admin" v-if="isAdmin">管理员</el-menu-item>
             
             <div class="flex-grow" />
             
@@ -52,17 +53,21 @@ export default {
     // 认证状态
     const isLoggedIn = ref(false)
     const username = ref('用户')
+    const currentUser = ref(null)
     
     const activeIndex = computed(() => {
       return route.path
     })
     
+    const isAdmin = computed(() => currentUser.value?.role === 'ADMIN')
+    
     const checkAuthStatus = () => {
-      // 检查用户是否已登录
       isLoggedIn.value = AuthService.isAuthenticated()
-      // 在实际应用中，可以从token或用户信息中获取用户名
-      if (isLoggedIn.value) {
-        username.value = '用户' // 这里应该从用户信息中获取真实用户名
+      currentUser.value = AuthService.getCurrentUser()
+      if (isLoggedIn.value && currentUser.value) {
+        username.value = currentUser.value.username || '用户'
+      } else {
+        username.value = '用户'
       }
     }
     
@@ -103,6 +108,7 @@ export default {
       activeIndex,
       isLoggedIn,
       username,
+      isAdmin,
       handleSelect
     }
   }

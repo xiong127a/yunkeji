@@ -21,18 +21,56 @@
           <template #header>
             <div class="card-header">
               <span>我的查询记录</span>
-              <el-button class="card-button" type="text">查看更多</el-button>
+              <el-button class="card-button" type="text" @click="$router.push('/query')">查看更多</el-button>
             </div>
           </template>
-          <div class="records-placeholder">
+          <div v-if="isLoggedIn && myRecords.length > 0">
+            <el-table :data="myRecords" size="small" border>
+              <el-table-column prop="id" label="ID" width="80" />
+              <el-table-column prop="name" label="姓名" width="120" />
+              <el-table-column prop="idCard" label="证件号" min-width="180" />
+              <el-table-column prop="status" label="状态" width="100" />
+              <el-table-column prop="createdAt" label="时间" min-width="160" />
+              <el-table-column label="本次费用(元)" width="130">
+                <template #default="{ row }">
+                  {{ formatCurrency(row.queryFee) }}
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+          <div v-else class="records-placeholder">
             <i class="el-icon-document"></i>
-            <p>暂无查询记录</p>
-            <el-button type="primary" @click="$router.push('/query')">立即查询</el-button>
+            <p v-if="isLoggedIn">暂无查询记录</p>
+            <p v-else>登录后可以查看您的查询记录</p>
+            <el-button
+              type="primary"
+              @click="$router.push(isLoggedIn ? '/query' : '/login')"
+            >
+              {{ isLoggedIn ? '立即查询' : '立即登录' }}
+            </el-button>
           </div>
         </el-card>
       </el-col>
       
       <el-col :span="8" class="sidebar-col">
+        <el-card class="sidebar-card" shadow="always" v-if="isLoggedIn">
+          <template #header>
+            <div class="card-header">
+              <span>账户信息</span>
+            </div>
+          </template>
+          <div class="account-info">
+            <div class="account-balance">
+              <div class="label">账户余额</div>
+              <div class="value">{{ formatCurrency(balance) }}</div>
+            </div>
+            <div class="account-price">
+              <div class="label">每次查询单价</div>
+              <div class="value">{{ formatCurrency(queryPrice) }}</div>
+            </div>
+          </div>
+        </el-card>
+        
         <el-card class="sidebar-card" shadow="always">
           <template #header>
             <div class="card-header">
@@ -69,10 +107,17 @@
 </template>
 
 <script>
+import UserService from '@/services/UserService'
+import AuthService from '@/services/AuthService'
+
 export default {
   name: 'DashboardView',
   data() {
     return {
+      isLoggedIn: false,
+      balance: 0,
+      queryPrice: 0,
+      myRecords: [],
       notifications: [
         {
           id: 1,
@@ -87,6 +132,38 @@ export default {
           time: '2023-11-28'
         }
       ]
+    }
+  },
+  created() {
+    this.isLoggedIn = AuthService.isAuthenticated()
+    if (this.isLoggedIn) {
+      this.loadProfile()
+      this.loadMyRecords()
+    }
+  },
+  methods: {
+    async loadProfile() {
+      try {
+        const profile = await UserService.getProfile()
+        this.balance = profile.balance ?? 0
+        this.queryPrice = profile.queryPrice ?? 0
+      } catch (e) {
+        console.error('加载账户信息失败', e)
+      }
+    },
+    async loadMyRecords() {
+      try {
+        const records = await UserService.getMyQueryRecords()
+        this.myRecords = Array.isArray(records) ? records : []
+      } catch (e) {
+        console.error('加载查询记录失败', e)
+      }
+    },
+    formatCurrency(value) {
+      if (value === null || value === undefined) return '¥0.00'
+      const num = typeof value === 'number' ? value : Number(value)
+      if (Number.isNaN(num)) return '¥0.00'
+      return `¥${num.toFixed(2)}`
     }
   }
 }
@@ -202,6 +279,29 @@ export default {
   font-size: 18px;
   color: #909399;
   margin-bottom: 30px;
+}
+
+.account-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.account-balance .value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.account-price .value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #34495e;
+}
+
+.account-info .label {
+  font-size: 13px;
+  color: #909399;
 }
 
 .sidebar-card {

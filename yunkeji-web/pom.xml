@@ -38,5 +38,12 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-ui</artifactId>
         </dependency>
+        
+        <!-- 需要访问 service-impl 中的 WechatPayService 实现 -->
+        <dependency>
+            <groupId>org.yun</groupId>
+            <artifactId>yunkeji-service-impl</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 </project>

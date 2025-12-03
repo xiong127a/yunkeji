@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
+import AuthService from '@/services/AuthService'
 
 const routes = [
   {
@@ -41,12 +42,32 @@ const routes = [
     path: '/test2',
     name: 'Test2',
     component: () => import('@/views/Test2.vue')
+  },
+  {
+    path: '/admin',
+    name: 'AdminQueryManagement',
+    component: () => import('@/views/AdminQueryManagement.vue'),
+    meta: { requiresAdmin: true }
   }
 ]
 
 const router = createRouter({
   history: createWebHistory('/yunkeji'),
   routes
+})
+
+router.beforeEach((to, from, next) => {
+  if (to.meta?.requiresAdmin) {
+    if (!AuthService.isAuthenticated()) {
+      next({ path: '/login' })
+      return
+    }
+    if (!AuthService.isAdmin()) {
+      next({ path: '/' })
+      return
+    }
+  }
+  next()
 })
 
 export default router

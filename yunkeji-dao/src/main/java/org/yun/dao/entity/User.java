@@ -16,6 +16,12 @@ public class User {
     
     private String password;
     
+    private String role;
+    
+    private java.math.BigDecimal queryPrice;
+    
+    private java.math.BigDecimal balance;
+    
     // Getters and setters
     public Long getId() {
         return id;
@@ -47,5 +53,29 @@ public class User {
     
     public void setPassword(String password) {
         this.password = password;
+    }
+    
+    public String getRole() {
+        return role;
+    }
+    
+    public void setRole(String role) {
+        this.role = role;
+    }
+    
+    public java.math.BigDecimal getQueryPrice() {
+        return queryPrice;
+    }
+    
+    public void setQueryPrice(java.math.BigDecimal queryPrice) {
+        this.queryPrice = queryPrice;
+    }
+    
+    public java.math.BigDecimal getBalance() {
+        return balance;
+    }
+    
+    public void setBalance(java.math.BigDecimal balance) {
+        this.balance = balance;
     }
 }

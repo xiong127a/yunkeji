@@ -41,7 +41,7 @@ spring:
       connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
   
   flyway:
-    enabled: false
+    enabled: true
     locations: classpath:db/migration
     
   servlet:
@@ -76,6 +76,39 @@ real:
 jwt:
   secret: mySecretKey
   expiration: 86400
+
+wechat:
+  pay:
+    # 微信商户号（mchid）
+    mchid: your_mchid_here
+    # 绑定的公众号/小程序/应用的 appid
+    appid: your_appid_here
+    # API v3 密钥，用于签名/解密（32位）
+    api-v3-key: your_api_v3_key_here
+    # 商户证书私钥路径，一般放在 resources/certs 下
+    private-key-path: classpath:certs/apiclient_key.pem
+    # 商户证书序列号
+    serial-no: your_cert_serial_no_here
+    # 微信支付回调通知地址（在商户平台也需要配置同样地址）
+    notify-url: https://your-domain.com/yunkeji/api/pay/wechat/notify
+    # 交易描述，会显示在支付详情中
+    description: 不动产查询服务
+
+alipay:
+  pay:
+    gateway-url: https://openapi.alipay.com/gateway.do
+    app-id: your_alipay_app_id
+    private-key: |
+      -----BEGIN PRIVATE KEY-----
+      your_alipay_private_key_here
+      -----END PRIVATE KEY-----
+    alipay-public-key: |
+      -----BEGIN PUBLIC KEY-----
+      alipay_public_key_here
+      -----END PUBLIC KEY-----
+    notify-url: https://your-domain.com/yunkeji/api/pay/alipay/notify
+    sign-type: RSA2
+    description: 不动产查询服务
 
 # JVM优化参数（在启动脚本中使用）
 # -Xms256m -Xmx1024m -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=256m

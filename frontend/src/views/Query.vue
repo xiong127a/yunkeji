@@ -13,6 +13,26 @@
           
           <div class="query-description">
             <p>请填写以下信息进行不动产查询，文件上传为可选项目</p>
+            <div v-if="isAuthenticated" class="pay-mode-row">
+              <span class="pay-mode-label">支付方式：</span>
+              <el-radio-group v-model="payMode" size="large">
+                <el-radio-button label="STORED_VALUE">余额扣费</el-radio-button>
+                <el-radio-button label="DIRECT_PAY">扫码支付</el-radio-button>
+              </el-radio-group>
+              <span class="pay-mode-tip" v-if="payMode === 'STORED_VALUE'">
+                当前单价：{{ formatCurrency(accountInfo.queryPrice) }}，先充值后自动扣费
+              </span>
+            </div>
+            <div v-if="isAuthenticated && payMode === 'DIRECT_PAY'" class="pay-channel-row">
+              <span class="pay-mode-label">支付渠道：</span>
+              <el-radio-group v-model="payChannel" size="large">
+                <el-radio-button label="WECHAT">微信支付</el-radio-button>
+                <el-radio-button label="ALIPAY">支付宝</el-radio-button>
+              </el-radio-group>
+              <span class="pay-mode-tip">
+                当前单价：{{ formatCurrency(accountInfo.queryPrice) }}，提交后将生成 {{ payChannel === 'ALIPAY' ? '支付宝' : '微信' }} 扫码二维码
+              </span>
+            </div>
           </div>
           
           <el-form :model="queryForm" :rules="rules" ref="formRef" label-width="120px" class="query-form">
@@ -78,6 +98,33 @@
               <li>查询过程中如有问题请联系客服</li>
               <li>查询结果具有法律效力，请认真核对</li>
             </ul>
+
+            <div v-if="isAuthenticated" class="billing-info">
+              <h4 style="margin-top: 20px;">计费信息</h4>
+              <p>当前每次查询费用：<strong>{{ formatCurrency(accountInfo.queryPrice) }}</strong></p>
+              <p>当前账户余额：<strong>{{ formatCurrency(accountInfo.balance) }}</strong></p>
+            </div>
+          </div>
+        </el-card>
+        
+        <el-card class="sidebar-card pending-card" style="margin-top: 20px;" shadow="always" v-if="isAuthenticated">
+          <template #header>
+            <div class="card-header">
+              <span>待支付订单</span>
+            </div>
+          </template>
+          <div v-if="pendingLoading" class="pending-empty">加载中...</div>
+          <div v-else-if="pendingOrders.length === 0" class="pending-empty">暂无待支付订单</div>
+          <div v-else class="pending-list">
+            <div class="pending-item" v-for="order in pendingOrders" :key="order.id">
+              <div class="pending-info">
+                <div class="pending-title">{{ order.recordName || '查询记录' }}</div>
+                <div class="pending-sub">订单号：{{ order.orderNo }}</div>
+                <div class="pending-sub">金额：{{ formatCurrency(order.amount) }}</div>
+                <div class="pending-sub">渠道：{{ order.payChannel === 'ALIPAY' ? '支付宝' : '微信' }}</div>
+              </div>
+              <el-button size="small" @click="regeneratePayOrder(order)">重新获取二维码</el-button>
+            </div>
           </div>
         </el-card>
         
@@ -114,6 +161,26 @@
         </el-card>
       </el-col>
     </el-row>
+    <el-dialog
+      v-model="qrDialogVisible"
+      width="380px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      destroy-on-close
+      title="扫码支付"
+    >
+      <div class="qr-dialog-content" v-if="qrContent">
+        <p class="qr-text">订单号：{{ currentOrder.orderNo }}</p>
+        <p class="qr-text">金额：{{ formatCurrency(currentOrder.amount) }}</p>
+        <qrcode-vue :value="qrContent" :size="220" level="H" />
+        <p class="qr-tip">
+          请使用{{ currentOrder.payChannel === 'ALIPAY' ? '支付宝' : '微信' }}扫码完成支付
+        </p>
+      </div>
+      <template #footer>
+        <el-button @click="qrDialogVisible = false">关 闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -123,6 +190,9 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import RealEstateService from '@/services/RealEstateService'
 import AuthService from '@/services/AuthService'
+import UserService from '@/services/UserService'
+import PayOrderService from '@/services/PayOrderService'
+import QrcodeVue from 'qrcode.vue'
 
 export default {
   name: 'QueryView',
@@ -168,6 +238,10 @@ export default {
     })
     
     const fileList = ref([])
+    const accountInfo = reactive({
+      balance: 0,
+      queryPrice: 0
+    })
     
     const rules = {
       name: [
@@ -203,9 +277,39 @@ export default {
       }
     ])
     
+    const payMode = ref('STORED_VALUE')
+    const payChannel = ref('WECHAT')
+    const qrDialogVisible = ref(false)
+    const qrContent = ref('')
+    const currentOrder = reactive({
+      orderNo: '',
+      amount: 0,
+      payChannel: 'WECHAT'
+    })
+    const pendingOrders = ref([])
+    const pendingLoading = ref(false)
+    
     const goToLogin = () => {
       router.push('/login');
     };
+    
+    const extractErrorMessage = (error) => {
+      if (!error) return '未知错误'
+      const resp = error.response
+      if (resp) {
+        const data = resp.data
+        if (typeof data === 'string' && data.trim().length > 0) {
+          return data
+        }
+        if (data?.message) {
+          return data.message
+        }
+        if (data?.error) {
+          return data.error
+        }
+      }
+      return error.message || '未知错误'
+    }
     
     const submitQuery = () => {
       // 提交查询前检查用户是否已登录
@@ -224,31 +328,44 @@ export default {
             if (fileList.value.length > 0) {
               // 如果有文件，则使用带文件的接口
               files = fileList.value.map(file => file.raw)
-              const response = await RealEstateService.submitQueryWithFiles({
+              const payload = {
                 name: queryForm.name,
                 idCard: queryForm.idCard
-              }, files)
-              
-              console.log('提交查询成功:', response)
-              ElMessage.success('查询请求已提交')
+              }
+              let response
+              if (payMode.value === 'STORED_VALUE') {
+                response = await RealEstateService.submitQueryWithFiles(payload, files)
+                console.log('提交查询成功:', response)
+                ElMessage.success('查询请求已提交')
+              } else {
+                response = await RealEstateService.submitQueryWithFilesDirectPay(payload, files, payChannel.value)
+                handleDirectPayResponse(response)
+              }
             } else {
               // 没有文件则使用普通接口
-              const response = await RealEstateService.submitQuery({
+              const payload = {
                 name: queryForm.name,
                 idCard: queryForm.idCard
-              })
-              
-              console.log('提交查询成功:', response)
-              ElMessage.success('查询请求已提交')
+              }
+              let response
+              if (payMode.value === 'STORED_VALUE') {
+                response = await RealEstateService.submitQuery(payload)
+                console.log('提交查询成功:', response)
+                ElMessage.success('查询请求已提交')
+              } else {
+                response = await RealEstateService.submitQueryDirectPay(payload, payChannel.value)
+                handleDirectPayResponse(response)
+              }
             }
             
-            // 重新加载查询记录
+            // 重新加载查询记录与账户信息
             loadQueryRecords()
+            loadProfile()
             // 重置表单
             resetForm()
           } catch (error) {
             console.error('提交查询失败:', error)
-            ElMessage.error('提交查询失败: ' + (error.message || '未知错误'))
+            ElMessage.error('提交查询失败: ' + extractErrorMessage(error))
           } finally {
             loading.value = false
           }
@@ -281,6 +398,64 @@ export default {
       }
     }
     
+    const loadPendingOrders = async () => {
+      if (!isAuthenticated.value) {
+        pendingOrders.value = []
+        return
+      }
+      pendingLoading.value = true
+      try {
+        const list = await PayOrderService.getPendingOrders()
+        pendingOrders.value = Array.isArray(list) ? list : []
+      } catch (error) {
+        console.error('获取待支付订单失败:', error)
+      } finally {
+        pendingLoading.value = false
+      }
+    }
+    
+    const handleDirectPayResponse = (resp) => {
+      if (!resp || !resp.orderNo || !resp.qrContent) {
+        ElMessage.error('创建支付订单失败')
+        return
+      }
+      currentOrder.orderNo = resp.orderNo
+      currentOrder.amount = resp.amount
+      currentOrder.payChannel = resp.payChannel || payChannel.value
+      qrContent.value = resp.qrContent
+      qrDialogVisible.value = true
+      loadPendingOrders()
+    }
+    
+    const regeneratePayOrder = async (order) => {
+      try {
+        const channel = payChannel.value || order.payChannel
+        const resp = await PayOrderService.regenerateOrder(order.id, channel)
+        handleDirectPayResponse(resp)
+        await loadPendingOrders()
+      } catch (error) {
+        ElMessage.error('重新生成二维码失败: ' + extractErrorMessage(error))
+      }
+    }
+    
+    const loadProfile = async () => {
+      if (!isAuthenticated.value) return
+      try {
+        const profile = await UserService.getProfile()
+        accountInfo.balance = profile.balance ?? 0
+        accountInfo.queryPrice = profile.queryPrice ?? 0
+      } catch (error) {
+        console.error('获取账户信息失败:', error)
+      }
+    }
+    
+    const formatCurrency = (value) => {
+      if (value === null || value === undefined) return '¥0.00'
+      const num = typeof value === 'number' ? value : Number(value)
+      if (Number.isNaN(num)) return '¥0.00'
+      return `¥${num.toFixed(2)}`
+    }
+    
     // 组件挂载时检查认证状态并加载查询记录
     onMounted(async () => {
       // 立即检查一次
@@ -292,12 +467,16 @@ export default {
       setTimeout(() => {
         checkAuthStatus()
         loadQueryRecords()
+        loadProfile()
+        loadPendingOrders()
       }, 100)
       
       // 监听自定义事件，用于在当前窗口内通知登录状态变化
       const handleAuthChange = () => {
         checkAuthStatus()
         loadQueryRecords()
+        loadProfile()
+        loadPendingOrders()
       }
       window.addEventListener('auth-status-changed', handleAuthChange)
       
@@ -319,6 +498,8 @@ export default {
       setTimeout(() => {
         checkAuthStatus()
         loadQueryRecords()
+        loadProfile()
+        loadPendingOrders()
       }, 50)
     })
     
@@ -333,6 +514,8 @@ export default {
         setTimeout(() => {
           checkAuthStatus()
           loadQueryRecords()
+          loadProfile()
+          loadPendingOrders()
         }, 50)
       }
     }, { immediate: true })
@@ -350,7 +533,17 @@ export default {
       viewDetail,
       isAuthenticated,
       goToLogin,
-      checkAuth
+      checkAuth,
+      accountInfo,
+      formatCurrency,
+      payMode,
+      payChannel,
+      qrDialogVisible,
+      qrContent,
+      currentOrder,
+      pendingOrders,
+      pendingLoading,
+      regeneratePayOrder
     }
   }
 }
@@ -470,6 +663,88 @@ export default {
   margin-bottom: 10px;
   line-height: 1.6;
   color: #606266;
+}
+
+.billing-info p {
+  margin: 4px 0;
+}
+
+.pay-mode-row {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pay-channel-row {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pay-mode-label {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.pay-mode-tip {
+  font-size: 13px;
+  color: #606266;
+}
+
+.qr-dialog-content {
+  text-align: center;
+}
+
+.qr-text {
+  margin: 6px 0;
+  font-size: 14px;
+}
+
+.qr-tip {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #606266;
+}
+
+.pending-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pending-item {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pending-info {
+  flex: 1;
+}
+
+.pending-title {
+  font-weight: 600;
+  color: #303133;
+}
+
+.pending-sub {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 2px;
+}
+
+.pending-empty {
+  text-align: center;
+  color: #909399;
+  padding: 10px 0;
 }
 
 .record-item {

@@ -13,6 +13,9 @@ public class RealEstateQueryRecordTableDef extends TableDef {
     public final QueryColumn ID_CARD = new QueryColumn(this, "id_card");
     public final QueryColumn REQUEST_NO = new QueryColumn(this, "request_no");
     public final QueryColumn STATUS = new QueryColumn(this, "status");
+    public final QueryColumn PAY_MODE = new QueryColumn(this, "pay_mode");
+    public final QueryColumn PAY_STATUS = new QueryColumn(this, "pay_status");
+    public final QueryColumn QUERY_FEE = new QueryColumn(this, "query_fee");
     public final QueryColumn RESULT = new QueryColumn(this, "result");
     public final QueryColumn CREATED_AT = new QueryColumn(this, "created_at");
     public final QueryColumn UPDATED_AT = new QueryColumn(this, "updated_at");
