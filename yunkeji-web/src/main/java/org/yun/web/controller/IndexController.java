@@ -1,5 +1,7 @@
 package org.yun.web.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
@@ -11,6 +13,8 @@ import javax.servlet.http.HttpServletRequest;
 
 @Controller
 public class IndexController {
+    
+    private static final Logger log = LoggerFactory.getLogger(IndexController.class);
     
     /**
      * 处理前端路由，所有非API请求都返回index.html
@@ -60,7 +64,8 @@ public class IndexController {
                         .body(resource);
             }
         } catch (Exception e) {
-            // 忽略异常，继续返回 index.html
+            // 记录异常但继续返回 index.html（用于SPA路由）
+            log.debug("加载静态资源失败，返回index.html: {}", resourcePath, e);
         }
         
         // 返回 index.html 用于 SPA 路由

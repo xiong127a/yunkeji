@@ -26,3 +26,13 @@ public class UserBalanceRecordTableDef extends TableDef {
 
 
 
+
+
+
+
+
+
+
+
+
+

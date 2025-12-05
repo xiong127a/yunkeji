@@ -7,12 +7,22 @@
           <div class="hero-content">
             <h1 class="hero-title">云科技不动产查询系统</h1>
             <p class="hero-subtitle">便捷、安全、高效的不动产信息查询平台</p>
-            <div class="hero-actions">
+            <!-- 未登录状态 -->
+            <div class="hero-actions" v-if="!isLoggedIn">
               <el-button type="primary" size="large" @click="$router.push('/login')" class="hero-button">
                 立即体验
               </el-button>
               <el-button size="large" @click="$router.push('/register')" class="hero-button">
                 免费注册
+              </el-button>
+            </div>
+            <!-- 已登录状态 -->
+            <div class="hero-actions" v-else>
+              <el-button type="primary" size="large" @click="$router.push('/query')" class="hero-button">
+                开始查询
+              </el-button>
+              <el-button size="large" @click="$router.push('/dashboard')" class="hero-button">
+                查看控制台
               </el-button>
             </div>
           </div>
@@ -63,7 +73,8 @@
       </el-col>
     </el-row>
 
-    <el-row justify="center" class="cta-row">
+    <!-- 未登录时显示注册引导 -->
+    <el-row justify="center" class="cta-row" v-if="!isLoggedIn">
       <el-col :span="24" class="cta-col">
         <el-card class="cta-card" shadow="never">
           <div class="cta-content">
@@ -78,31 +89,87 @@
         </el-card>
       </el-col>
     </el-row>
+    <!-- 已登录时显示快速入口 -->
+    <el-row justify="center" class="cta-row" v-else>
+      <el-col :span="24" class="cta-col">
+        <el-card class="cta-card" shadow="never">
+          <div class="cta-content">
+            <h2>欢迎回来，{{ username }}！</h2>
+            <p>快速开始您的不动产查询服务</p>
+            <div class="cta-actions">
+              <el-button type="primary" size="large" @click="$router.push('/query')">
+                提交查询
+              </el-button>
+              <el-button size="large" @click="$router.push('/dashboard')" style="margin-left: 15px;">
+                查看记录
+              </el-button>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
 <script>
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import AuthService from '@/services/AuthService'
+
 export default {
   name: 'HomeView',
-  data() {
+  setup() {
+    const router = useRouter()
+    const route = useRoute()
+    
+    const isLoggedIn = ref(false)
+    const username = ref('')
+    const currentUser = ref(null)
+    
+    const features = ref([
+      {
+        icon: 'el-icon-search',
+        title: '在线查询',
+        description: '随时随地提交不动产查询申请，无需排队等候'
+      },
+      {
+        icon: 'el-icon-upload',
+        title: '文件上传',
+        description: '支持多种格式文件上传，保障信息完整性'
+      },
+      {
+        icon: 'el-icon-time',
+        title: '实时进度',
+        description: '实时跟踪查询进度，掌握办理状态'
+      }
+    ])
+    
+    const checkAuthStatus = () => {
+      isLoggedIn.value = AuthService.isAuthenticated()
+      currentUser.value = AuthService.getCurrentUser()
+      if (isLoggedIn.value && currentUser.value) {
+        username.value = currentUser.value.username || '用户'
+      } else {
+        username.value = ''
+      }
+    }
+    
+    onMounted(() => {
+      checkAuthStatus()
+      // 监听认证状态变化
+      window.addEventListener('auth-status-changed', checkAuthStatus)
+      window.addEventListener('storage', checkAuthStatus)
+    })
+    
+    // 监听路由变化
+    watch(() => route.path, () => {
+      checkAuthStatus()
+    })
+    
     return {
-      features: [
-        {
-          icon: 'el-icon-search',
-          title: '在线查询',
-          description: '随时随地提交不动产查询申请，无需排队等候'
-        },
-        {
-          icon: 'el-icon-upload',
-          title: '文件上传',
-          description: '支持多种格式文件上传，保障信息完整性'
-        },
-        {
-          icon: 'el-icon-time',
-          title: '实时进度',
-          description: '实时跟踪查询进度，掌握办理状态'
-        }
-      ]
+      isLoggedIn,
+      username,
+      features
     }
   }
 }

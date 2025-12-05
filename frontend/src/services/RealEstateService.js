@@ -100,6 +100,25 @@ class RealEstateService {
       throw error
     }
   }
+
+  // 刷新查询结果
+  async refreshQueryResult(recordId) {
+    try {
+      const response = await apiClient.post(`/user/real-estate/records/${recordId}/refresh`)
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  // 删除待支付的查询记录
+  async deleteRecord(recordId) {
+    try {
+      await apiClient.delete(`/user/real-estate/records/${recordId}`)
+    } catch (error) {
+      throw error
+    }
+  }
 }
 
 export default new RealEstateService()

@@ -4,7 +4,6 @@ package org.yun.service.impl;
 import com.mybatisflex.core.query.QueryWrapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.yun.common.dto.AssetResponse;
@@ -29,20 +28,19 @@ public class AssetServiceImpl implements AssetService {
     @Autowired
     private AssetMapper assetMapper;
     
-    @Value("${file.upload.path}")
-    private String uploadPath;
-    
     @Override
     public AssetResponse createAsset(CreateAssetRequest request, MultipartFile file) {
+        // 获取上传目录（项目平级目录下的upload）
+        String uploadBasePath = org.yun.common.util.FileUploadUtil.getUploadBasePath();
         // 创建上传目录
-        File uploadDir = new File(uploadPath);
+        File uploadDir = new File(uploadBasePath);
         if (!uploadDir.exists()) {
             uploadDir.mkdirs();
         }
         
         // 保存文件
         String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-        Path filePath = Paths.get(uploadPath, fileName);
+        Path filePath = Paths.get(uploadBasePath, fileName);
         try {
             Files.write(filePath, file.getBytes());
         } catch (IOException e) {

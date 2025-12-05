@@ -16,50 +16,89 @@
     </el-row>
     
     <el-row :gutter="20" class="records-row">
-      <el-col :span="16" class="records-col">
+      <el-col :span="18" class="records-col">
         <el-card class="main-card" shadow="always">
-          <template #header>
-            <div class="card-header">
-              <span>我的查询记录</span>
-              <el-button class="card-button" type="text" @click="$router.push('/query')">查看更多</el-button>
-            </div>
-          </template>
-          <div v-if="isLoggedIn && myRecords.length > 0">
-            <el-table :data="myRecords" size="small" border>
-              <el-table-column prop="id" label="ID" width="80" />
-              <el-table-column prop="name" label="姓名" width="120" />
-              <el-table-column prop="idCard" label="证件号" min-width="180" />
-              <el-table-column prop="status" label="状态" width="100" />
-              <el-table-column prop="createdAt" label="时间" min-width="160" />
-              <el-table-column label="本次费用(元)" width="130">
-                <template #default="{ row }">
-                  {{ formatCurrency(row.queryFee) }}
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-          <div v-else class="records-placeholder">
-            <i class="el-icon-document"></i>
-            <p v-if="isLoggedIn">暂无查询记录</p>
-            <p v-else>登录后可以查看您的查询记录</p>
-            <el-button
-              type="primary"
-              @click="$router.push(isLoggedIn ? '/query' : '/login')"
-            >
-              {{ isLoggedIn ? '立即查询' : '立即登录' }}
+      <template #header>
+        <div class="card-header">
+          <span>我的查询记录</span>
+          <div style="display: flex; gap: 10px;">
+            <el-button class="card-button" type="text" @click="loadMyRecords" :loading="recordsLoading">
+              <el-icon><Refresh /></el-icon>
+              刷新
             </el-button>
+            <el-button class="card-button" type="text" @click="$router.push('/query')">查看更多</el-button>
           </div>
+        </div>
+      </template>
+      <div v-if="isLoggedIn" class="records-table-wrap">
+        <el-table
+          :data="myRecords"
+          size="small"
+          border
+          v-loading="recordsLoading"
+          empty-text="暂无查询记录"
+        >
+          <el-table-column prop="id" label="ID" width="80" />
+          <el-table-column prop="name" label="姓名" width="120" />
+          <el-table-column prop="idCard" label="证件号" min-width="180" />
+          <el-table-column label="状态" width="120">
+            <template #default="{ row }">
+              <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createdAt" label="时间" min-width="160" />
+          <el-table-column label="本次费用(元)" width="130">
+            <template #default="{ row }">
+              {{ formatCurrency(row.queryFee) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="150" fixed="right">
+            <template #default="{ row }">
+              <el-button type="primary" size="small" @click="viewDetail(row.id)">查看</el-button>
+              <el-button 
+                v-if="canRefreshRecord(row.status)" 
+                type="warning" 
+                size="small" 
+                @click="refreshRecord(row.id)"
+                :loading="refreshingRecordId === row.id"
+              >
+                刷新
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div v-else class="records-placeholder">
+        <i class="el-icon-document"></i>
+        <p>登录后可以查看您的查询记录</p>
+        <el-button
+          type="primary"
+          @click="$router.push('/login')"
+        >
+          立即登录
+        </el-button>
+      </div>
         </el-card>
       </el-col>
       
-      <el-col :span="8" class="sidebar-col">
+      <el-col :span="6" class="sidebar-col">
         <el-card class="sidebar-card" shadow="always" v-if="isLoggedIn">
           <template #header>
             <div class="card-header">
               <span>账户信息</span>
             </div>
           </template>
-          <div class="account-info">
+          <div v-if="accountLoading" class="account-info loading">
+            <div class="account-balance">
+              <div class="label">账户余额</div>
+              <div class="value">加载中...</div>
+            </div>
+            <div class="account-price">
+              <div class="label">每次查询单价</div>
+              <div class="value">加载中...</div>
+            </div>
+          </div>
+          <div v-else class="account-info">
             <div class="account-balance">
               <div class="label">账户余额</div>
               <div class="value">{{ formatCurrency(balance) }}</div>
@@ -107,17 +146,28 @@
 </template>
 
 <script>
+import { Refresh } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import UserService from '@/services/UserService'
 import AuthService from '@/services/AuthService'
+import RealEstateService from '@/services/RealEstateService'
 
 export default {
   name: 'DashboardView',
+  components: {
+    Refresh
+  },
   data() {
+    const authed = AuthService.isAuthenticated()
     return {
-      isLoggedIn: false,
+      isLoggedIn: authed,
       balance: 0,
       queryPrice: 0,
       myRecords: [],
+      recordsLoading: authed, // 已登录时默认显示加载态，避免闪烁
+      accountLoading: authed,
+      refreshingRecordId: null,
+      Refresh,
       notifications: [
         {
           id: 1,
@@ -135,7 +185,6 @@ export default {
     }
   },
   created() {
-    this.isLoggedIn = AuthService.isAuthenticated()
     if (this.isLoggedIn) {
       this.loadProfile()
       this.loadMyRecords()
@@ -149,14 +198,43 @@ export default {
         this.queryPrice = profile.queryPrice ?? 0
       } catch (e) {
         console.error('加载账户信息失败', e)
+      } finally {
+        this.accountLoading = false
       }
     },
     async loadMyRecords() {
+      this.recordsLoading = true
       try {
         const records = await UserService.getMyQueryRecords()
         this.myRecords = Array.isArray(records) ? records : []
       } catch (e) {
         console.error('加载查询记录失败', e)
+        ElMessage.error('加载查询记录失败')
+      } finally {
+        this.recordsLoading = false
+      }
+    },
+    viewDetail(recordId) {
+      this.$router.push(`/query/${recordId}`)
+    },
+    canRefreshRecord(status) {
+      return status !== 'COMPLETED' && status !== 'REJECTED' && status !== 'FAILED'
+    },
+    async refreshRecord(recordId) {
+      this.refreshingRecordId = recordId
+      try {
+        const updated = await RealEstateService.refreshQueryResult(recordId)
+        // 更新列表中的记录
+        const index = this.myRecords.findIndex(r => r.id === recordId)
+        if (index !== -1) {
+          this.myRecords[index] = updated
+        }
+        ElMessage.success('刷新成功')
+      } catch (error) {
+        console.error('刷新查询结果失败:', error)
+        ElMessage.error('刷新失败: ' + (error.message || '未知错误'))
+      } finally {
+        this.refreshingRecordId = null
       }
     },
     formatCurrency(value) {
@@ -164,6 +242,28 @@ export default {
       const num = typeof value === 'number' ? value : Number(value)
       if (Number.isNaN(num)) return '¥0.00'
       return `¥${num.toFixed(2)}`
+    },
+    getStatusType(status) {
+      const statusMap = {
+        'SUBMITTED': 'info',
+        'PROCESSING': 'warning',
+        'COMPLETED': 'success',
+        'FAILED': 'danger',
+        'REJECTED': 'danger',
+        'PENDING_PAY': 'warning'
+      }
+      return statusMap[status] || 'info'
+    },
+    getStatusText(status) {
+      const statusMap = {
+        'SUBMITTED': '已提交',
+        'PROCESSING': '处理中',
+        'COMPLETED': '已完成',
+        'FAILED': '失败',
+        'REJECTED': '已拒绝',
+        'PENDING_PAY': '待支付'
+      }
+      return statusMap[status] || status || '未知'
     }
   }
 }
@@ -269,6 +369,10 @@ export default {
   padding: 60px 20px;
 }
 
+.records-table-wrap {
+  min-height: 260px; /* 固定占位，避免加载后高度变化过大 */
+}
+
 .records-placeholder i {
   font-size: 48px;
   color: #c0c4cc;
@@ -368,11 +472,11 @@ export default {
   .records-row {
     flex-direction: column;
   }
-  
+
   .records-col, .sidebar-col {
     width: 100%;
   }
-  
+
   .sidebar-col {
     margin-top: 20px;
   }

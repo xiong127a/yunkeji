@@ -63,4 +63,40 @@ public interface UserManagementService {
     List<PayOrderDTO> getPendingPayOrders(Long userId);
     
     DirectPayOrderResponse regeneratePayOrder(Long userId, Long payOrderId, String payChannel);
+    
+    /**
+     * 处理不动产查询结果回调
+     */
+    void handleRealEstateCallback(java.util.Map<String, Object> callbackData);
+    
+    /**
+     * 手动刷新查询结果（主动查询）
+     * @param recordId 查询记录ID
+     * @return 更新后的查询记录
+     */
+    RealEstateQueryRecordDTO refreshQueryResult(Long recordId);
+    
+    /**
+     * 下载文件
+     * @param fileId 文件ID
+     * @return 文件字节数组
+     */
+    byte[] downloadFile(Long fileId);
+    
+    /**
+     * 根据ID获取文件信息
+     * @param fileId 文件ID
+     * @return 文件DTO
+     */
+    RealEstateFileDTO getFileById(Long fileId);
+
+    /**
+     * 删除待支付的查询记录（仅限未支付）
+     */
+    void deletePendingRecord(Long userId, Long recordId);
+
+    /**
+     * 删除待支付订单（仅限未支付）
+     */
+    void deletePendingOrder(Long userId, Long orderId);
 }

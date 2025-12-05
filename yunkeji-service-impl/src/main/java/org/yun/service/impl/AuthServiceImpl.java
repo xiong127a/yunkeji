@@ -1,5 +1,7 @@
 package org.yun.service.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,8 @@ import java.security.NoSuchAlgorithmException;
 
 @Service
 public class AuthServiceImpl implements AuthService {
+    
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
     
     @Autowired
     private UserMapper userMapper;
@@ -114,6 +118,7 @@ public class AuthServiceImpl implements AuthService {
             String username = jwtUtil.extractUsername(token);
             return username != null && !username.isEmpty() && !jwtUtil.isTokenExpired(token);
         } catch (Exception e) {
+            log.debug("Token验证失败", e);
             return false;
         }
     }

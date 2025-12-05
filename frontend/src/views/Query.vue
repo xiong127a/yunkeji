@@ -44,14 +44,44 @@
               <el-input v-model="queryForm.idCard" placeholder="请输入身份证号" size="large" clearable />
             </el-form-item>
             
-            <el-form-item label="上传文件">
+            <el-form-item label="授权书">
+              <div class="authorization-section">
+                <div class="authorization-download">
+                  <el-button type="primary" @click="downloadAuthorization" size="default">
+                    <span style="margin-right: 5px;">⬇</span>下载授权书
+                  </el-button>
+                  <span class="authorization-tip">请下载授权书，打印后签名并拍照上传</span>
+                </div>
+                <el-upload
+                  class="authorization-upload"
+                  :auto-upload="false"
+                  :limit="1"
+                  :on-change="handleAuthorizationChange"
+                  :file-list="authorizationFileList"
+                  accept="image/*,.pdf"
+                >
+                  <el-button type="success" size="default">
+                    <span style="margin-right: 5px;">⬆</span>上传已签名的授权书
+                  </el-button>
+                  <template #tip>
+                    <div class="el-upload__tip">
+                      支持jpg/png/pdf文件，单个文件不超过5MB（必填）
+                    </div>
+                  </template>
+                </el-upload>
+              </div>
+            </el-form-item>
+            
+            <el-form-item label="其他文件（可选）">
               <el-upload
                 class="upload-demo"
-                action="/api/upload"
+                :auto-upload="false"
                 :multiple="true"
                 :limit="3"
-                v-model:file-list="fileList"
+                :on-change="handleFileChange"
+                :file-list="fileList"
                 drag
+                accept="image/*,.pdf"
               >
                 <el-icon class="el-icon--upload"><i class="el-icon-upload"></i></el-icon>
                 <div class="el-upload__text">
@@ -96,7 +126,6 @@
             <ul>
               <li>系统会对您的个人信息严格保密</li>
               <li>查询过程中如有问题请联系客服</li>
-              <li>查询结果具有法律效力，请认真核对</li>
             </ul>
 
             <div v-if="isAuthenticated" class="billing-info">
@@ -123,7 +152,15 @@
                 <div class="pending-sub">金额：{{ formatCurrency(order.amount) }}</div>
                 <div class="pending-sub">渠道：{{ order.payChannel === 'ALIPAY' ? '支付宝' : '微信' }}</div>
               </div>
-              <el-button size="small" @click="regeneratePayOrder(order)">重新获取二维码</el-button>
+              <div class="pending-actions">
+                <el-button size="small" @click="regeneratePayOrder(order)">重新获取二维码</el-button>
+                <el-button 
+                  size="small" 
+                  type="danger"
+                  :loading="deletingOrderId === order.id"
+                  @click="deletePendingOrder(order)"
+                >删除</el-button>
+              </div>
             </div>
           </div>
         </el-card>
@@ -132,17 +169,44 @@
           <template #header>
             <div class="card-header">
               <span>查询记录</span>
-              <el-button class="card-button" type="text">查看更多</el-button>
+              <div style="display: flex; gap: 10px;">
+                <el-button class="card-button" type="text" @click="loadQueryRecords" :loading="recordsLoading">
+                  <el-icon><Refresh /></el-icon>
+                  刷新
+                </el-button>
+                <el-button class="card-button" type="text" @click="viewAllRecords">查看更多</el-button>
+              </div>
             </div>
           </template>
           
-          <div class="records-list">
-            <div class="record-item" v-for="record in recentRecords" :key="record.id">
+          <div v-if="recordsLoading" class="records-loading">加载中...</div>
+          <div v-else-if="queryRecords.length === 0" class="records-empty">暂无查询记录</div>
+          <div v-else class="records-list">
+            <div class="record-item" v-for="record in queryRecords.slice(0, 5)" :key="record.id" @click="viewDetail(record.id)">
               <div class="record-info">
-                <div class="record-title">{{ record.type }}</div>
-                <div class="record-time">{{ record.time }}</div>
+                <div class="record-title">{{ record.name || '不动产查询' }}</div>
+                <div class="record-time">{{ formatTime(record.createdAt) }}</div>
               </div>
-              <el-tag :type="record.statusType">{{ record.status }}</el-tag>
+              <div class="record-actions">
+                <el-tag :type="getStatusType(record.status)">{{ getStatusText(record.status) }}</el-tag>
+                <el-button 
+                  v-if="record.status === 'PENDING_PAY'"
+                  type="text"
+                  size="small"
+                  :loading="deletingRecordId === record.id"
+                  @click.stop="deleteRecord(record.id)"
+                >删除</el-button>
+                <el-button 
+                  v-if="canRefreshRecord(record.status)" 
+                  type="text" 
+                  size="small" 
+                  @click.stop="refreshRecord(record.id)"
+                  :loading="refreshingRecordId === record.id"
+                >
+                  刷新
+                </el-button>
+                <el-button type="text" size="small" @click.stop="viewDetail(record.id)">查看</el-button>
+              </div>
             </div>
           </div>
         </el-card>
@@ -188,11 +252,13 @@
 import { ref, reactive, onMounted, onActivated, watch, nextTick, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Refresh } from '@element-plus/icons-vue'
 import RealEstateService from '@/services/RealEstateService'
 import AuthService from '@/services/AuthService'
 import UserService from '@/services/UserService'
 import PayOrderService from '@/services/PayOrderService'
 import QrcodeVue from 'qrcode.vue'
+import apiClient from '@/services/api'
 
 export default {
   name: 'QueryView',
@@ -201,7 +267,8 @@ export default {
     const route = useRoute()
     const formRef = ref(null)
     const loading = ref(false)
-    const recordsLoading = ref(false)
+    // 初始加载时先显示加载态，避免闪现“暂无数据”
+    const recordsLoading = ref(AuthService.isAuthenticated())
     
     // 使用ref来存储认证状态，立即检查当前状态
     const isAuthenticated = ref(AuthService.isAuthenticated())
@@ -238,6 +305,7 @@ export default {
     })
     
     const fileList = ref([])
+    const authorizationFileList = ref([])
     const accountInfo = reactive({
       balance: 0,
       queryPrice: 0
@@ -253,29 +321,7 @@ export default {
       ]
     }
     
-    const recentRecords = ref([
-      {
-        id: 1,
-        type: '房产查询',
-        time: '2023-11-28',
-        status: '已完成',
-        statusType: 'success'
-      },
-      {
-        id: 2,
-        type: '土地查询',
-        time: '2023-11-25',
-        status: '处理中',
-        statusType: 'warning'
-      },
-      {
-        id: 3,
-        type: '房产查询',
-        time: '2023-11-20',
-        status: '已提交',
-        statusType: 'info'
-      }
-    ])
+    const queryRecords = ref([])
     
     const payMode = ref('STORED_VALUE')
     const payChannel = ref('WECHAT')
@@ -288,10 +334,40 @@ export default {
     })
     const pendingOrders = ref([])
     const pendingLoading = ref(false)
+    const refreshingRecordId = ref(null)
+    const deletingRecordId = ref(null)
+    const deletingOrderId = ref(null)
     
     const goToLogin = () => {
       router.push('/login');
     };
+    
+    // 下载授权书
+    const downloadAuthorization = () => {
+      const url = '/yunkeji/api/authorization/download'
+      const link = document.createElement('a')
+      link.href = url
+      link.download = '云科技个人信息查询及使用授权书.pdf'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      ElMessage.success('授权书下载成功，请打印后签名并拍照上传')
+    }
+    
+    // 处理授权书上传
+    const handleAuthorizationChange = (file, fileList) => {
+      authorizationFileList.value = fileList
+    }
+    
+    // 处理其他文件上传
+    const handleFileChange = (file, fileList) => {
+      // 过滤掉授权书文件
+      const filteredList = fileList.filter(f => {
+        const isAuthFile = authorizationFileList.value.some(af => af.uid === f.uid)
+        return !isAuthFile
+      })
+      fileList.value = filteredList
+    }
     
     const extractErrorMessage = (error) => {
       if (!error) return '未知错误'
@@ -321,18 +397,33 @@ export default {
       
       formRef.value.validate(async (valid) => {
         if (valid) {
+          // 检查是否上传了授权书
+          if (authorizationFileList.value.length === 0) {
+            ElMessage.warning('请先下载授权书，签名后拍照上传')
+            return
+          }
+          
           loading.value = true
           try {
-            // 处理文件上传
+            // 合并授权书和其他文件
             let files = []
+            // 先添加授权书（必填）
+            if (authorizationFileList.value.length > 0) {
+              files.push(...authorizationFileList.value.map(file => file.raw))
+            }
+            // 再添加其他文件（可选）
             if (fileList.value.length > 0) {
-              // 如果有文件，则使用带文件的接口
-              files = fileList.value.map(file => file.raw)
-              const payload = {
-                name: queryForm.name,
-                idCard: queryForm.idCard
-              }
-              let response
+              files.push(...fileList.value.map(file => file.raw))
+            }
+            
+            const payload = {
+              name: queryForm.name,
+              idCard: queryForm.idCard
+            }
+            
+            let response
+            if (files.length > 0) {
+              // 有文件则使用带文件的接口
               if (payMode.value === 'STORED_VALUE') {
                 response = await RealEstateService.submitQueryWithFiles(payload, files)
                 console.log('提交查询成功:', response)
@@ -342,12 +433,7 @@ export default {
                 handleDirectPayResponse(response)
               }
             } else {
-              // 没有文件则使用普通接口
-              const payload = {
-                name: queryForm.name,
-                idCard: queryForm.idCard
-              }
-              let response
+              // 没有文件则使用普通接口（理论上不会到这里，因为授权书是必填的）
               if (payMode.value === 'STORED_VALUE') {
                 response = await RealEstateService.submitQuery(payload)
                 console.log('提交查询成功:', response)
@@ -376,6 +462,7 @@ export default {
     const resetForm = () => {
       formRef.value.resetFields()
       fileList.value = []
+      authorizationFileList.value = []
     }
     
     const viewDetail = (id) => {
@@ -389,13 +476,85 @@ export default {
       recordsLoading.value = true
       try {
         const records = await RealEstateService.getQueryRecords()
-        // queryRecords.value = records
+        queryRecords.value = Array.isArray(records) ? records : []
       } catch (error) {
         console.error('获取查询记录失败:', error)
         ElMessage.error('获取查询记录失败: ' + (error.message || '未知错误'))
       } finally {
         recordsLoading.value = false
       }
+    }
+    
+    const viewAllRecords = () => {
+      router.push('/dashboard')
+    }
+    
+    const canRefreshRecord = (status) => {
+      return status !== 'COMPLETED' && status !== 'REJECTED' && status !== 'FAILED'
+    }
+    
+    const refreshRecord = async (recordId) => {
+      refreshingRecordId.value = recordId
+      try {
+        const updated = await RealEstateService.refreshQueryResult(recordId)
+        const index = queryRecords.value.findIndex(r => r.id === recordId)
+        if (index !== -1) {
+          queryRecords.value[index] = updated
+        }
+        ElMessage.success('刷新成功')
+      } catch (error) {
+        console.error('刷新查询结果失败:', error)
+        ElMessage.error('刷新失败: ' + (error.message || '未知错误'))
+      } finally {
+        refreshingRecordId.value = null
+      }
+    }
+
+    const deleteRecord = async (recordId) => {
+      deletingRecordId.value = recordId
+      try {
+        await RealEstateService.deleteRecord(recordId)
+        queryRecords.value = queryRecords.value.filter(r => r.id !== recordId)
+        ElMessage.success('已删除待支付的查询记录')
+      } catch (error) {
+        console.error('删除查询记录失败:', error)
+        ElMessage.error('删除失败: ' + (error.response?.data?.message || error.message || '未知错误'))
+      } finally {
+        deletingRecordId.value = null
+      }
+    }
+    
+    const getStatusType = (status) => {
+      const statusMap = {
+        'SUBMITTED': 'info',
+        'PROCESSING': 'warning',
+        'COMPLETED': 'success',
+        'FAILED': 'danger',
+        'REJECTED': 'danger',
+        'PENDING_PAY': 'warning'
+      }
+      return statusMap[status] || 'info'
+    }
+    
+    const getStatusText = (status) => {
+      const statusMap = {
+        'SUBMITTED': '已提交',
+        'PROCESSING': '处理中',
+        'COMPLETED': '已完成',
+        'FAILED': '失败',
+        'REJECTED': '已拒绝',
+        'PENDING_PAY': '待支付'
+      }
+      return statusMap[status] || status
+    }
+    
+    const formatTime = (timeStr) => {
+      if (!timeStr) return ''
+      const date = new Date(timeStr)
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
     }
     
     const loadPendingOrders = async () => {
@@ -437,6 +596,19 @@ export default {
         ElMessage.error('重新生成二维码失败: ' + extractErrorMessage(error))
       }
     }
+
+    const deletePendingOrder = async (order) => {
+      deletingOrderId.value = order.id
+      try {
+        await PayOrderService.deletePendingOrder(order.id)
+        pendingOrders.value = pendingOrders.value.filter(o => o.id !== order.id)
+        ElMessage.success('已删除待支付订单')
+      } catch (error) {
+        ElMessage.error('删除失败: ' + extractErrorMessage(error))
+      } finally {
+        deletingOrderId.value = null
+      }
+    }
     
     const loadProfile = async () => {
       if (!isAuthenticated.value) return
@@ -460,6 +632,10 @@ export default {
     onMounted(async () => {
       // 立即检查一次
       checkAuthStatus()
+      // 如果已登录，先标记加载态，避免空白闪烁
+      if (isAuthenticated.value) {
+        recordsLoading.value = true
+      }
       
       // 使用 nextTick 确保在 DOM 更新后检查
       await nextTick()
@@ -527,8 +703,12 @@ export default {
       loading,
       recordsLoading,
       fileList,
-      recentRecords,
+      queryRecords,
       submitQuery,
+      viewAllRecords,
+      getStatusType,
+      getStatusText,
+      formatTime,
       resetForm,
       viewDetail,
       isAuthenticated,
@@ -543,7 +723,19 @@ export default {
       currentOrder,
       pendingOrders,
       pendingLoading,
-      regeneratePayOrder
+      regeneratePayOrder,
+      downloadAuthorization,
+      authorizationFileList,
+      handleAuthorizationChange,
+      handleFileChange,
+      Refresh,
+      canRefreshRecord,
+      refreshRecord,
+      refreshingRecordId,
+      deleteRecord,
+      deletingRecordId,
+      deletePendingOrder,
+      deletingOrderId
     }
   }
 }
@@ -553,7 +745,7 @@ export default {
 .query-container {
   position: relative;
   padding: 20px;
-  max-width: 1400px;
+  max-width: 1400px; /* 与控制台一致 */
   margin: 0 auto;
   min-height: 100vh;
   overflow: hidden;
@@ -572,6 +764,7 @@ export default {
 
 .query-row {
   width: 100%;
+  margin-top: 30px; /* 与控制台页面间距保持一致 */
 }
 
 .query-card, .info-card, .records-card, .login-prompt-card {
@@ -747,13 +940,39 @@ export default {
   padding: 10px 0;
 }
 
+.authorization-section {
+  width: 100%;
+}
+
+.authorization-download {
+  margin-bottom: 15px;
+  padding: 15px;
+  background: #f0f9ff;
+  border: 1px solid #b3d8ff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.authorization-tip {
+  color: #409eff;
+  font-size: 14px;
+  flex: 1;
+}
+
+.authorization-upload {
+  margin-top: 10px;
+}
+
 .record-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 0;
+  padding: 15px;
   border-bottom: 1px solid #eee;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .record-item:last-child {
@@ -762,7 +981,19 @@ export default {
 
 .record-item:hover {
   background-color: #f8f9fa;
-  padding-left: 10px;
+  padding-left: 20px;
+}
+
+.record-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.records-loading, .records-empty {
+  text-align: center;
+  color: #909399;
+  padding: 20px 0;
 }
 
 .record-info {

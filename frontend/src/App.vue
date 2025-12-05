@@ -1,12 +1,16 @@
 <script setup>
 import { RouterView } from 'vue-router'
 import AppHeader from './components/Header.vue'
+import AppFooter from './components/Footer.vue'
+import ContactFloatButton from './components/ContactFloatButton.vue'
 </script>
 
 <template>
   <div id="app">
     <AppHeader />
     <RouterView />
+    <AppFooter />
+    <ContactFloatButton />
   </div>
 </template>
 
@@ -14,7 +18,13 @@ import AppHeader from './components/Header.vue'
 #app {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 0 0 20px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#app > :nth-child(2) {
+  flex: 1;
 }
 
 * {

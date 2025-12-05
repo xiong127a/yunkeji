@@ -9,8 +9,19 @@ class PayOrderService {
     const channelParam = payChannel ? `?payChannel=${payChannel}` : ''
     return apiClient.post(`/user/pay/orders/${orderId}/regenerate${channelParam}`)
   }
+
+  async deletePendingOrder (orderId) {
+    return apiClient.delete(`/user/pay/orders/${orderId}`)
+  }
 }
 
 export default new PayOrderService()
+
+
+
+
+
+
+
 
 

@@ -60,18 +60,23 @@ mybatis-flex:
     
 file:
   upload:
-    path: ./uploads/
-    real-estate:
-      path: ./uploads/real-estate/
+    # 文件上传路径：默认使用项目平级目录下的upload目录
+    # 例如：项目在 D:/workSpace/yunkeji，则文件保存在 D:/workSpace/upload/
+    # 如果需要在配置文件中自定义路径，可以取消下面的注释并修改
+    # path: ./uploads/
+    # real-estate:
+    #   path: ./uploads/real-estate/
     
 real:
   estate:
     api:
-      url: http://8.137.70.50:81
+      url: http://8.137.70.50:81  # 正式环境，测试环境地址需要确认
     access:
-      key: accessKey
+      key: 9795bd107e6487a4c3a3b929f7dc962b
     secret:
-      key: secretKey
+      key: 9795bd107e6487a4c3a3b929f7dc962b
+    # 回调地址（需要配置为公网可访问的地址，第三方系统查询完成后会调用此地址）
+    callback-url: https://your-domain.com/yunkeji/api/callback/real-estate
       
 jwt:
   secret: mySecretKey
@@ -109,6 +114,15 @@ alipay:
     notify-url: https://your-domain.com/yunkeji/api/pay/alipay/notify
     sign-type: RSA2
     description: 不动产查询服务
+
+# 客服联系方式配置
+contact:
+  # 客服微信（可选）
+  wechat: zs_s0501
+  # 客服手机号（可选）
+  phone: 17600536651
+  # 工作时间（可选）
+  work-hours: 周一至周五 9:00-18:00
 
 # JVM优化参数（在启动脚本中使用）
 # -Xms256m -Xmx1024m -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=256m

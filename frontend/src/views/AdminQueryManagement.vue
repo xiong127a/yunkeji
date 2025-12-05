@@ -27,7 +27,7 @@
         <el-table-column prop="requestNo" label="请求编号" min-width="200" />
         <el-table-column label="状态" width="140">
           <template #default="{ row }">
-            <el-tag type="info">{{ row.status || 'SUBMITTED' }}</el-tag>
+            <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="提交时间" min-width="180">
@@ -106,7 +106,11 @@
             <el-table-column prop="id" label="用户ID" width="90" />
             <el-table-column prop="username" label="用户名" min-width="140" />
             <el-table-column prop="email" label="邮箱" min-width="200" />
-            <el-table-column prop="role" label="角色" width="120" />
+            <el-table-column label="角色" width="120">
+              <template #default="{ row }">
+                <el-tag :type="row.role === 'ADMIN' ? 'danger' : 'info'">{{ getRoleText(row.role) }}</el-tag>
+              </template>
+            </el-table-column>
             <el-table-column label="余额 (元)" min-width="160">
               <template #default="{ row }">
                 {{ formatCurrency(row.balance) }}
@@ -232,6 +236,38 @@ const formatCurrency = (value) => {
     return '¥0.00'
   }
   return `¥${numberValue.toFixed(2)}`
+}
+
+const getStatusType = (status) => {
+  const statusMap = {
+    'SUBMITTED': 'info',
+    'PROCESSING': 'warning',
+    'COMPLETED': 'success',
+    'FAILED': 'danger',
+    'REJECTED': 'danger',
+    'PENDING_PAY': 'warning'
+  }
+  return statusMap[status] || 'info'
+}
+
+const getStatusText = (status) => {
+  const statusMap = {
+    'SUBMITTED': '已提交',
+    'PROCESSING': '处理中',
+    'COMPLETED': '已完成',
+    'FAILED': '失败',
+    'REJECTED': '已拒绝',
+    'PENDING_PAY': '待支付'
+  }
+  return statusMap[status] || status || '未知'
+}
+
+const getRoleText = (role) => {
+  const roleMap = {
+    'ADMIN': '管理员',
+    'USER': '普通用户'
+  }
+  return roleMap[role] || role || '未知'
 }
 
 const loadRecords = async () => {

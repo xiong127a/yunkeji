@@ -1,11 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
+    <Properties>
+        <!-- 定义日志文件存储路径 -->
+        <Property name="LOG_HOME">./logs</Property>
+    </Properties>
+    
     <Appenders>
+        <!-- 控制台输出 -->
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%ex{full}"/>
         </Console>
+        
+        <!-- SQL审计日志文件输出 -->
+        <RollingFile name="SqlAuditFile" fileName="${LOG_HOME}/sql-audit.log"
+                     filePattern="${LOG_HOME}/sql-audit-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level - %msg%n"/>
+            <Policies>
+                <!-- 按天滚动 -->
+                <TimeBasedTriggeringPolicy/>
+                <!-- 文件大小超过10MB时滚动 -->
+                <SizeBasedTriggeringPolicy size="10MB"/>
+            </Policies>
+            <!-- 保留最近30天的日志文件 -->
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
     </Appenders>
+    
     <Loggers>
+        <!-- SQL审计日志：只输出到文件，不输出到控制台 -->
+        <Logger name="SQL_AUDIT" level="info" additivity="false">
+            <AppenderRef ref="SqlAuditFile"/>
+        </Logger>
+        
+        <!-- 项目包的日志级别设置为info，error和warn都会显示 -->
+        <Logger name="org.yun" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        
+        <!-- Spring框架的日志级别 -->
+        <Logger name="org.springframework" level="warn" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        
+        <!-- 根日志级别 -->
         <Root level="info">
             <AppenderRef ref="Console"/>
         </Root>
