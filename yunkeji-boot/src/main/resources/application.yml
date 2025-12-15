@@ -70,13 +70,13 @@ file:
 real:
   estate:
     api:
-      url: http://8.137.70.50:81  # 正式环境，测试环境地址需要确认
+      url: http://8.137.70.50:81  # 测试/沙箱环境地址
     access:
-      key: 9795bd107e6487a4c3a3b929f7dc962b
+      key: accessKey
     secret:
-      key: 9795bd107e6487a4c3a3b929f7dc962b
+      key: secretKey
     # 回调地址（需要配置为公网可访问的地址，第三方系统查询完成后会调用此地址）
-    callback-url: https://your-domain.com/yunkeji/api/callback/real-estate
+    callback-url: https://sandbox-domain.com/yunkeji/api/callback/real-estate
       
 jwt:
   secret: mySecretKey
@@ -84,36 +84,33 @@ jwt:
 
 wechat:
   pay:
-    # 微信商户号（mchid）
-    mchid: your_mchid_here
-    # 绑定的公众号/小程序/应用的 appid
-    appid: your_appid_here
-    # API v3 密钥，用于签名/解密（32位）
-    api-v3-key: your_api_v3_key_here
-    # 商户证书私钥路径，一般放在 resources/certs 下
-    private-key-path: classpath:certs/apiclient_key.pem
-    # 商户证书序列号
-    serial-no: your_cert_serial_no_here
+    # 沙箱：请替换为沙箱商户号
+    mchid: your_sandbox_mchid_here
+    # 沙箱：绑定的公众号/小程序/应用的 appid
+    appid: your_sandbox_appid_here
+    # 沙箱：API v3 密钥（32位）
+    api-v3-key: your_sandbox_api_v3_key_32_chars
+    # 沙箱：商户证书私钥路径
+    private-key-path: classpath:certs/apiclient_key_sandbox.pem
+    # 沙箱：商户证书序列号
+    serial-no: your_sandbox_cert_serial_no_here
     # 微信支付回调通知地址（在商户平台也需要配置同样地址）
-    notify-url: https://your-domain.com/yunkeji/api/pay/wechat/notify
+    notify-url: https://sandbox-domain.com/yunkeji/api/pay/wechat/notify
     # 交易描述，会显示在支付详情中
-    description: 不动产查询服务
+    description: 不动产查询服务（沙箱）
 
 alipay:
   pay:
-    gateway-url: https://openapi.alipay.com/gateway.do
-    app-id: your_alipay_app_id
+    # 支付宝沙箱网关
+    gateway-url: https://openapi-sandbox.dl.alipaydev.com/gateway.do
+    app-id: your_sandbox_app_id
     private-key: |
-      -----BEGIN PRIVATE KEY-----
-      your_alipay_private_key_here
-      -----END PRIVATE KEY-----
+      your_sandbox_private_key_here
     alipay-public-key: |
-      -----BEGIN PUBLIC KEY-----
-      alipay_public_key_here
-      -----END PUBLIC KEY-----
-    notify-url: https://your-domain.com/yunkeji/api/pay/alipay/notify
+      your_sandbox_alipay_public_key_here
+    notify-url: https://sandbox-domain.com/yunkeji/api/pay/alipay/notify
     sign-type: RSA2
-    description: 不动产查询服务
+    description: 不动产查询服务（沙箱）
 
 # 客服联系方式配置
 contact:
