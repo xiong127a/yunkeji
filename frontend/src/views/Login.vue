@@ -6,8 +6,8 @@
             <div class="login-illustration">
               <img src="../assets/yunkeji-logo.jpg" alt="云科技logo" style="max-width: 100%; height: auto; border-radius: 10px; display: block; margin: 0 auto;" />
             </div>
-            <h2>云科技不动产查询系统</h2>
-            <p>便捷、安全、高效的不动产信息查询平台</p>
+            <h2>云科技大数据查询系统</h2>
+            <p>便捷、安全、高效的大数据信息查询平台</p>
           </div>
           
           <div class="login-right">

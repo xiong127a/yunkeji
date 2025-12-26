@@ -25,7 +25,7 @@ CREATE TABLE asset (
     FOREIGN KEY (user_id) REFERENCES `user`(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 创建不动产查询记录表（包含查询费用）
+-- 创建大数据查询记录表（包含查询费用）
 CREATE TABLE real_estate_query_record (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE real_estate_query_record (
     FOREIGN KEY (user_id) REFERENCES `user`(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 创建不动产查询文件表
+-- 创建大数据查询文件表
 CREATE TABLE real_estate_file (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     query_record_id BIGINT NOT NULL,

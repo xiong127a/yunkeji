@@ -1,124 +1,58 @@
 import apiClient from './api'
 
 class RealEstateService {
-  // 提交不动产查询请求
+  // 提交大数据查询请求
   async submitQuery(queryData) {
-    try {
-      const response = await apiClient.post('/user/real-estate/query', queryData)
-      return response
-    } catch (error) {
-      throw error
-    }
+    const response = await apiClient.post('/user/real-estate/query', queryData)
+    return response
   }
 
-  // 提交不动产查询请求（带文件）
+  // 提交大数据查询请求（带文件）
   async submitQueryWithFiles(queryData, files) {
-    try {
-      const formData = new FormData();
-      formData.append('request', new Blob([JSON.stringify(queryData)], {
-        type: 'application/json'
-      }));
-      
-      if (files && files.length > 0) {
-        files.forEach((file, index) => {
-          formData.append('files', file);
-        });
-      }
-      
-      const response = await apiClient.post('/user/real-estate/query-with-files', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
+    const formData = new FormData()
+    formData.append('request', new Blob([JSON.stringify(queryData)], { type: 'application/json' }))
 
-  // 提交不动产查询（扫码直付）
-  async submitQueryDirectPay (queryData, payChannel = 'WECHAT') {
-    try {
-      const response = await apiClient.post(`/user/real-estate/query-direct-pay?payChannel=${payChannel}`, queryData)
-      return response
-    } catch (error) {
-      throw error
-    }
-  }
-
-  // 提交不动产查询（带文件，扫码直付）
-  async submitQueryWithFilesDirectPay (queryData, files, payChannel = 'WECHAT') {
-    try {
-      const formData = new FormData()
-      formData.append('request', new Blob([JSON.stringify(queryData)], {
-        type: 'application/json'
-      }))
-
-      if (files && files.length > 0) {
-        files.forEach((file) => {
-          formData.append('files', file)
-        })
-      }
-
-      const response = await apiClient.post(`/user/real-estate/query-with-files-direct-pay?payChannel=${payChannel}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+    if (files && files.length > 0) {
+      files.forEach((file) => {
+        formData.append('files', file)
       })
-      return response
-    } catch (error) {
-      throw error
     }
+
+    const response = await apiClient.post('/user/real-estate/query-with-files', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    return response
   }
 
   // 获取用户的查询记录
   async getQueryRecords() {
-    try {
-      const response = await apiClient.get('/user/real-estate/records')
-      return response
-    } catch (error) {
-      throw error
-    }
+    const response = await apiClient.get('/user/real-estate/records')
+    return response
   }
 
   // 获取查询记录详情
   async getQueryRecordDetail(recordId) {
-    try {
-      const response = await apiClient.get(`/user/real-estate/records/${recordId}`)
-      return response
-    } catch (error) {
-      throw error
-    }
+    const response = await apiClient.get(`/user/real-estate/records/${recordId}`)
+    return response
   }
 
   // 获取查询结果
   async getQueryResult(requestNo) {
-    try {
-      const response = await apiClient.get(`/user/real-estate/result/${requestNo}`)
-      return response
-    } catch (error) {
-      throw error
-    }
+    const response = await apiClient.get(`/user/real-estate/result/${requestNo}`)
+    return response
   }
 
   // 刷新查询结果
   async refreshQueryResult(recordId) {
-    try {
-      const response = await apiClient.post(`/user/real-estate/records/${recordId}/refresh`)
-      return response
-    } catch (error) {
-      throw error
-    }
+    const response = await apiClient.post(`/user/real-estate/records/${recordId}/refresh`)
+    return response
   }
 
-  // 删除待支付的查询记录
+  // 删除查询记录
   async deleteRecord(recordId) {
-    try {
-      await apiClient.delete(`/user/real-estate/records/${recordId}`)
-    } catch (error) {
-      throw error
-    }
+    await apiClient.delete(`/user/real-estate/records/${recordId}`)
   }
 }
 
 export default new RealEstateService()
+

@@ -4,7 +4,7 @@
       <div class="header-content">
         <div class="logo-section">
           <img alt="云科技Logo" src="../assets/yunkeji-logo.jpg" class="logo-img"/>
-          <router-link to="/" class="logo-text">云科技不动产查询系统</router-link>
+          <router-link to="/" class="logo-text">云科技大数据查询系统</router-link>
         </div>
         
         <div class="nav-section">

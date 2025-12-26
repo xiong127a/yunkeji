@@ -6,27 +6,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.yun.common.dto.DirectPayOrderResponse;
-import org.yun.common.dto.PayOrderDTO;
 import org.yun.common.dto.RealEstateFileDTO;
 import org.yun.common.dto.RealEstateQueryRecordDTO;
 import org.yun.common.dto.RealEstateQueryRequest;
 import org.yun.common.dto.RealEstateQueryResponse;
-import org.yun.dao.entity.PayOrder;
 import org.yun.dao.entity.RealEstateFile;
 import org.yun.dao.entity.RealEstateQueryRecord;
 import org.yun.dao.entity.User;
 import org.yun.dao.entity.UserBalanceRecord;
 import org.yun.service.exception.BalanceInsufficientException;
-import org.yun.dao.mapper.PayOrderMapper;
 import org.yun.dao.mapper.RealEstateFileMapper;
 import org.yun.dao.mapper.RealEstateQueryRecordMapper;
 import org.yun.dao.mapper.UserBalanceRecordMapper;
 import org.yun.dao.mapper.UserMapper;
 import org.yun.service.RealEstateService;
 import org.yun.service.UserManagementService;
-import org.yun.service.pay.AlipayPayService;
-import org.yun.service.pay.WechatPayService;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -44,7 +38,6 @@ import org.slf4j.LoggerFactory;
 
 import static org.yun.dao.table.RealEstateFileTableDef.REAL_ESTATE_FILE;
 import static org.yun.dao.table.RealEstateQueryRecordTableDef.REAL_ESTATE_QUERY_RECORD;
-import static org.yun.dao.table.PayOrderTableDef.PAY_ORDER;
 
 @Service
 public class UserManagementServiceImpl implements UserManagementService {
@@ -64,16 +57,7 @@ public class UserManagementServiceImpl implements UserManagementService {
     private UserBalanceRecordMapper userBalanceRecordMapper;
     
     @Autowired
-    private PayOrderMapper payOrderMapper;
-    
-    @Autowired
     private RealEstateService realEstateService;
-    
-    @Autowired(required = false)
-    private WechatPayService wechatPayService;
-    
-    @Autowired(required = false)
-    private AlipayPayService alipayPayService;
     
     @Value("${real.estate.callback.url:}")
     private String callbackUrl;
@@ -106,7 +90,7 @@ public class UserManagementServiceImpl implements UserManagementService {
             log.warn("回调地址未配置，第三方系统将无法主动回调结果");
         }
         
-        // 调用不动产查询服务
+        // 调用大数据查询服务
         RealEstateQueryResponse response = realEstateService.submitRealEstateQuery(request);
         
         // 更新记录中的请求编号
@@ -187,7 +171,7 @@ public class UserManagementServiceImpl implements UserManagementService {
             log.warn("回调地址未配置，第三方系统将无法主动回调结果");
         }
         
-        // 调用不动产查询服务
+        // 调用大数据查询服务
         RealEstateQueryResponse response = realEstateService.submitRealEstateQuery(request);
         
         // 更新记录中的请求编号
@@ -204,7 +188,7 @@ public class UserManagementServiceImpl implements UserManagementService {
     
     @Override
     public RealEstateQueryResponse queryRealEstateResult(String requestNo) {
-        // 查询不动产结果
+        // 查询大数据结果
         org.yun.common.dto.RealEstateResultQueryRequest request = 
             new org.yun.common.dto.RealEstateResultQueryRequest();
         request.setReqNo(requestNo);
@@ -268,201 +252,7 @@ public class UserManagementServiceImpl implements UserManagementService {
         record.setQueryFee(queryFee != null ? queryFee : BigDecimal.ZERO);
         record.setUpdatedAt(new Date());
         recordMapper.update(record);
-        if ("DIRECT_PAY".equalsIgnoreCase(record.getPayMode())
-                && !"PAID".equalsIgnoreCase(record.getPayStatus())) {
-            List<PayOrder> pendingOrders = payOrderMapper.selectListByQuery(
-                    QueryWrapper.create()
-                            .where(PAY_ORDER.QUERY_RECORD_ID.eq(recordId))
-                            .and(PAY_ORDER.STATUS.eq("UNPAID"))
-            );
-            for (PayOrder order : pendingOrders) {
-                order.setStatus("CLOSED");
-                order.setUpdatedAt(new Date());
-                payOrderMapper.update(order);
-            }
-        }
         return convertToDTO(record, true);
-    }
-    
-    @Override
-    public DirectPayOrderResponse createDirectPayQuery(Long userId, RealEstateQueryRequest request, String payChannel) {
-        User user = userMapper.selectOneById(userId);
-        if (user == null) {
-            throw new RuntimeException("用户不存在");
-        }
-        BigDecimal price = user.getQueryPrice() != null ? user.getQueryPrice() : BigDecimal.ZERO;
-        String channel = normalizePayChannel(payChannel);
-        
-        RealEstateQueryRecord record = new RealEstateQueryRecord();
-        record.setUserId(userId);
-        record.setName(request.getName());
-        record.setIdCard(request.getIdCard());
-        record.setStatus("PENDING_PAY");
-        record.setPayMode("DIRECT_PAY");
-        record.setPayStatus("UNPAID");
-        record.setQueryFee(price);
-        record.setCreatedAt(new Date());
-        record.setUpdatedAt(new Date());
-        recordMapper.insert(record);
-        
-        return createPayOrderForRecord(user, record, channel);
-    }
-    
-    @Override
-    public DirectPayOrderResponse createDirectPayQueryWithFiles(Long userId, RealEstateQueryRequest request, MultipartFile[] files, String payChannel) {
-        // 先创建查询记录（未支付）
-        User user = userMapper.selectOneById(userId);
-        if (user == null) {
-            throw new RuntimeException("用户不存在");
-        }
-        BigDecimal price = user.getQueryPrice() != null ? user.getQueryPrice() : BigDecimal.ZERO;
-        String channel = normalizePayChannel(payChannel);
-        
-        RealEstateQueryRecord record = new RealEstateQueryRecord();
-        record.setUserId(userId);
-        record.setName(request.getName());
-        record.setIdCard(request.getIdCard());
-        record.setStatus("PENDING_PAY");
-        record.setPayMode("DIRECT_PAY");
-        record.setPayStatus("UNPAID");
-        record.setQueryFee(price);
-        record.setCreatedAt(new Date());
-        record.setUpdatedAt(new Date());
-        recordMapper.insert(record);
-        
-        // 保存文件（与储值模式相同）
-        if (files != null && files.length > 0) {
-            // 获取实际上传路径（项目平级目录下的upload）
-            String realEstatePath = org.yun.common.util.FileUploadUtil.ensureUploadDir("real-estate");
-            
-            for (MultipartFile file : files) {
-                if (!file.isEmpty()) {
-                    try {
-                        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-                        Path filePath = Paths.get(realEstatePath, fileName);
-                        Files.write(filePath, file.getBytes());
-                        
-                        RealEstateFile realEstateFile = new RealEstateFile();
-                        realEstateFile.setQueryRecordId(record.getId());
-                        realEstateFile.setFileName(file.getOriginalFilename());
-                        realEstateFile.setFilePath(filePath.toString());
-                        realEstateFile.setFileSize(file.getSize());
-                        realEstateFile.setCreatedAt(new Date());
-                        String originalName = file.getOriginalFilename();
-                        if (originalName != null) {
-                            if (originalName.toLowerCase().endsWith(".pdf")) {
-                                realEstateFile.setFileType("PDF");
-                            } else if (originalName.toLowerCase().matches(".*\\.(jpg|jpeg|png|gif)$")) {
-                                realEstateFile.setFileType("IMAGE");
-                            } else {
-                                realEstateFile.setFileType("OTHER");
-                            }
-                        }
-                        fileMapper.insert(realEstateFile);
-                    } catch (IOException e) {
-                        throw new RuntimeException("文件保存失败: " + file.getOriginalFilename(), e);
-                    }
-                }
-            }
-        }
-        
-        return createPayOrderForRecord(user, record, channel);
-    }
-    
-    @Override
-    public List<PayOrderDTO> getPendingPayOrders(Long userId) {
-        List<PayOrder> orders = payOrderMapper.selectListByQuery(
-                QueryWrapper.create()
-                        .where(PAY_ORDER.USER_ID.eq(userId))
-                        .and(PAY_ORDER.STATUS.eq("UNPAID"))
-                        .orderBy(PAY_ORDER.CREATED_AT.desc())
-        );
-        return orders.stream().map(order -> {
-            PayOrderDTO dto = new PayOrderDTO();
-            dto.setId(order.getId());
-            dto.setOrderNo(order.getOrderNo());
-            dto.setAmount(order.getAmount());
-            dto.setPayChannel(order.getPayChannel());
-            dto.setStatus(order.getStatus());
-            dto.setRecordId(order.getQueryRecordId());
-            dto.setCreatedAt(formatDate(order.getCreatedAt()));
-            dto.setUpdatedAt(formatDate(order.getUpdatedAt()));
-            RealEstateQueryRecord record = recordMapper.selectOneById(order.getQueryRecordId());
-            if (record != null) {
-                dto.setRecordName(record.getName());
-            }
-            return dto;
-        }).collect(Collectors.toList());
-    }
-    
-    @Override
-    public DirectPayOrderResponse regeneratePayOrder(Long userId, Long payOrderId, String payChannel) {
-        PayOrder existing = payOrderMapper.selectOneById(payOrderId);
-        if (existing == null || !existing.getUserId().equals(userId)) {
-            throw new RuntimeException("支付订单不存在");
-        }
-        if (!"UNPAID".equalsIgnoreCase(existing.getStatus())) {
-            throw new RuntimeException("仅能对待支付订单重新支付");
-        }
-        existing.setStatus("CLOSED");
-        existing.setUpdatedAt(new Date());
-        payOrderMapper.update(existing);
-        
-        RealEstateQueryRecord record = recordMapper.selectOneById(existing.getQueryRecordId());
-        if (record == null) {
-            throw new RuntimeException("关联的查询记录不存在");
-        }
-        User user = userMapper.selectOneById(userId);
-        if (user == null) {
-            throw new RuntimeException("用户不存在");
-        }
-        String channel = payChannel != null ? payChannel : existing.getPayChannel();
-        return createPayOrderForRecord(user, record, channel);
-    }
-    
-    private String generateQrContent(String channel, String orderNo, BigDecimal price) {
-        if ("ALIPAY".equals(channel) && alipayPayService != null) {
-            return alipayPayService.createPrecreateOrder(orderNo, price, "不动产查询");
-        } else if ("WECHAT".equals(channel) && wechatPayService != null) {
-            return wechatPayService.createNativeOrder(orderNo, price, "不动产查询");
-        }
-        return "pay:" + channel + ":" + orderNo;
-    }
-    
-    private String normalizePayChannel(String payChannel) {
-        if (payChannel == null) {
-            return "WECHAT";
-        }
-        String upper = payChannel.trim().toUpperCase();
-        return ("ALIPAY".equals(upper) || "WECHAT".equals(upper)) ? upper : "WECHAT";
-    }
-    
-    private DirectPayOrderResponse createPayOrderForRecord(User user, RealEstateQueryRecord record, String payChannel) {
-        BigDecimal price = record.getQueryFee() != null ? record.getQueryFee() : BigDecimal.ZERO;
-        String channel = normalizePayChannel(payChannel);
-        String orderNo = "PO" + System.currentTimeMillis() + user.getId();
-        String qrContent = generateQrContent(channel, orderNo, price);
-        
-        PayOrder payOrder = new PayOrder();
-        payOrder.setOrderNo(orderNo);
-        payOrder.setUserId(user.getId());
-        payOrder.setQueryRecordId(record.getId());
-        payOrder.setAmount(price);
-        payOrder.setPayChannel(channel);
-        payOrder.setStatus("UNPAID");
-        payOrder.setQrContent(qrContent);
-        payOrder.setCreatedAt(new Date());
-        payOrder.setUpdatedAt(new Date());
-        payOrderMapper.insert(payOrder);
-        
-        DirectPayOrderResponse resp = new DirectPayOrderResponse();
-        resp.setRecordId(record.getId());
-        resp.setOrderNo(orderNo);
-        resp.setAmount(price);
-        resp.setQrContent(qrContent);
-        resp.setStatus("UNPAID");
-        resp.setPayChannel(channel);
-        return resp;
     }
     
     private String formatDate(Date date) {
@@ -483,11 +273,24 @@ public class UserManagementServiceImpl implements UserManagementService {
     
     /**
      * 根据用户的查询单价扣减余额，并记录余额变动
+     * 只扣子级余额，不扣顶级余额（因为单价已保证 >= 成本价）
      */
     private BigDecimal handleUserBalance(Long userId) {
         User user = userMapper.selectOneById(userId);
         if (user == null) {
             throw new RuntimeException("用户不存在");
+        }
+        // 启用状态校验
+        if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {
+            throw new RuntimeException("账号未启用，无法提交查询");
+        }
+        // 实名/KYC 校验：未被标记为信任的用户必须通过证件审核
+        Boolean trusted = user.getTrusted();
+        if (!Boolean.TRUE.equals(trusted)) {
+            String kyc = user.getKycStatus();
+            if (kyc == null || !"APPROVED".equalsIgnoreCase(kyc)) {
+                throw new RuntimeException("账号未完成证件审核，无法提交查询");
+            }
         }
         BigDecimal price = user.getQueryPrice() != null ? user.getQueryPrice() : BigDecimal.ZERO;
         if (price.compareTo(BigDecimal.ZERO) <= 0) {
@@ -507,7 +310,7 @@ public class UserManagementServiceImpl implements UserManagementService {
         record.setChangeAmount(price.negate());
         record.setChangeType("DEDUCT");
         record.setRelatedRecordId(null);
-        record.setRemark("不动产查询扣费");
+        record.setRemark("大数据查询扣费");
         record.setCreatedAt(new Date());
         userBalanceRecordMapper.insert(record);
         
@@ -516,7 +319,7 @@ public class UserManagementServiceImpl implements UserManagementService {
     
     @Override
     public void handleRealEstateCallback(Map<String, Object> callbackData) {
-        log.info("处理不动产查询回调: {}", callbackData);
+        log.info("处理大数据查询回调: {}", callbackData);
         
         try {
             // 从回调数据中提取 requestNo
@@ -595,7 +398,7 @@ public class UserManagementServiceImpl implements UserManagementService {
                 record.getId(), requestNo, record.getStatus());
             
         } catch (Exception e) {
-            log.error("处理不动产查询回调失败", e);
+            log.error("处理大数据查询回调失败", e);
             throw new RuntimeException("处理回调失败: " + e.getMessage(), e);
         }
     }
@@ -742,16 +545,6 @@ public class UserManagementServiceImpl implements UserManagementService {
             throw new RuntimeException("仅未支付的查询记录可以删除");
         }
 
-        // 删除关联的未支付订单
-        List<PayOrder> orders = payOrderMapper.selectListByQuery(
-            QueryWrapper.create()
-                .where(PAY_ORDER.QUERY_RECORD_ID.eq(recordId))
-                .and(PAY_ORDER.STATUS.eq("UNPAID"))
-        );
-        for (PayOrder order : orders) {
-            payOrderMapper.deleteById(order.getId());
-        }
-
         // 删除关联的文件及磁盘文件
         List<RealEstateFile> files = fileMapper.selectListByQuery(
             QueryWrapper.create()
@@ -773,17 +566,5 @@ public class UserManagementServiceImpl implements UserManagementService {
 
         // 删除查询记录
         recordMapper.deleteById(recordId);
-    }
-
-    @Override
-    public void deletePendingOrder(Long userId, Long orderId) {
-        PayOrder order = payOrderMapper.selectOneById(orderId);
-        if (order == null || !order.getUserId().equals(userId)) {
-            throw new RuntimeException("订单不存在");
-        }
-        if (!"UNPAID".equalsIgnoreCase(order.getStatus())) {
-            throw new RuntimeException("仅未支付的订单可以删除");
-        }
-        payOrderMapper.deleteById(orderId);
     }
 }

@@ -1,8 +1,6 @@
 package org.yun.service;
 
 import org.springframework.web.multipart.MultipartFile;
-import org.yun.common.dto.DirectPayOrderResponse;
-import org.yun.common.dto.PayOrderDTO;
 import org.yun.common.dto.RealEstateFileDTO;
 import org.yun.common.dto.RealEstateQueryRecordDTO;
 import org.yun.common.dto.RealEstateQueryRequest;
@@ -14,17 +12,17 @@ import java.util.List;
 public interface UserManagementService {
     
     /**
-     * 提交不动产查询请求
+     * 提交大数据查询请求
      */
     RealEstateQueryRecordDTO submitRealEstateQuery(Long userId, RealEstateQueryRequest request);
     
     /**
-     * 提交不动产查询请求（带文件）
+     * 提交大数据查询请求（带文件）
      */
     RealEstateQueryRecordDTO submitRealEstateQueryWithFiles(Long userId, RealEstateQueryRequest request, MultipartFile[] files);
     
     /**
-     * 查询不动产结果
+     * 查询大数据结果
      */
     RealEstateQueryResponse queryRealEstateResult(String requestNo);
     
@@ -54,18 +52,7 @@ public interface UserManagementService {
     RealEstateQueryRecordDTO updateQueryFee(Long recordId, BigDecimal queryFee);
     
     /**
-     * 直付模式：创建查询记录并生成支付订单（不扣余额）
-     */
-    DirectPayOrderResponse createDirectPayQuery(Long userId, RealEstateQueryRequest request, String payChannel);
-    
-    DirectPayOrderResponse createDirectPayQueryWithFiles(Long userId, RealEstateQueryRequest request, MultipartFile[] files, String payChannel);
-    
-    List<PayOrderDTO> getPendingPayOrders(Long userId);
-    
-    DirectPayOrderResponse regeneratePayOrder(Long userId, Long payOrderId, String payChannel);
-    
-    /**
-     * 处理不动产查询结果回调
+     * 处理大数据查询结果回调
      */
     void handleRealEstateCallback(java.util.Map<String, Object> callbackData);
     
@@ -95,8 +82,4 @@ public interface UserManagementService {
      */
     void deletePendingRecord(Long userId, Long recordId);
 
-    /**
-     * 删除待支付订单（仅限未支付）
-     */
-    void deletePendingOrder(Long userId, Long orderId);
 }

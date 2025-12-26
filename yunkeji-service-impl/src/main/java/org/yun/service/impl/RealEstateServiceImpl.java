@@ -63,7 +63,7 @@ public class RealEstateServiceImpl implements RealEstateService {
             RealEstateQueryResponse response = restTemplate.postForObject(url, entity, RealEstateQueryResponse.class);
             return response;
         } catch (Exception e) {
-            throw new RuntimeException("提交不动产查询请求失败", e);
+            throw new RuntimeException("提交大数据查询请求失败", e);
         }
     }
     
@@ -92,7 +92,7 @@ public class RealEstateServiceImpl implements RealEstateService {
             RealEstateQueryResponse response = restTemplate.postForObject(url, entity, RealEstateQueryResponse.class);
             return response;
         } catch (Exception e) {
-            throw new RuntimeException("查询不动产结果失败", e);
+            throw new RuntimeException("查询大数据结果失败", e);
         }
     }
     

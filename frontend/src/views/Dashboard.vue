@@ -5,8 +5,8 @@
       <el-col :span="24" class="welcome-col">
         <el-card class="welcome-card" shadow="always">
           <div class="welcome-content">
-            <h2>欢迎使用云科技不动产查询系统</h2>
-            <p>一站式不动产信息查询服务平台，为您提供便捷、安全、高效的服务体验</p>
+            <h2>欢迎使用云科技大数据查询系统</h2>
+            <p>一站式大数据信息查询服务平台，为您提供便捷、安全、高效的服务体验</p>
             <el-button type="primary" @click="$router.push('/query')" class="start-button">
               开始查询 <i class="el-icon-arrow-right"></i>
             </el-button>
@@ -110,19 +110,6 @@
           </div>
         </el-card>
         
-        <el-card class="sidebar-card" shadow="always">
-          <template #header>
-            <div class="card-header">
-              <span>最新通知</span>
-            </div>
-          </template>
-          <div class="notification-item" v-for="notification in notifications" :key="notification.id">
-            <h4>{{ notification.title }}</h4>
-            <p>{{ notification.content }}</p>
-            <span class="notification-time">{{ notification.time }}</span>
-          </div>
-        </el-card>
-        
         <el-card class="sidebar-card" style="margin-top: 20px;" shadow="always">
           <template #header>
             <div class="card-header">
@@ -132,7 +119,7 @@
           <div class="quick-actions">
             <el-button type="primary" @click="$router.push('/query')" class="action-button">
               <i class="el-icon-search"></i>
-              <span>不动产查询</span>
+              <span>大数据查询</span>
             </el-button>
             <el-button @click="$router.push('/dashboard')" class="action-button">
               <i class="el-icon-user"></i>
@@ -168,20 +155,6 @@ export default {
       accountLoading: authed,
       refreshingRecordId: null,
       Refresh,
-      notifications: [
-        {
-          id: 1,
-          title: '系统维护通知',
-          content: '系统将于2023年12月15日 00:00-02:00进行例行维护',
-          time: '2023-12-01'
-        },
-        {
-          id: 2,
-          title: '新功能上线',
-          content: '新增土地查询功能，支持更多类型的不动产信息查询',
-          time: '2023-11-28'
-        }
-      ]
     }
   },
   created() {
@@ -249,8 +222,7 @@ export default {
         'PROCESSING': 'warning',
         'COMPLETED': 'success',
         'FAILED': 'danger',
-        'REJECTED': 'danger',
-        'PENDING_PAY': 'warning'
+        'REJECTED': 'danger'
       }
       return statusMap[status] || 'info'
     },
@@ -260,8 +232,7 @@ export default {
         'PROCESSING': '处理中',
         'COMPLETED': '已完成',
         'FAILED': '失败',
-        'REJECTED': '已拒绝',
-        'PENDING_PAY': '待支付'
+        'REJECTED': '已拒绝'
       }
       return statusMap[status] || status || '未知'
     }

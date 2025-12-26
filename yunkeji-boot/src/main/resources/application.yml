@@ -43,6 +43,9 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    # 临时禁用校验和验证（修复后可以重新启用）
+    # 执行 fix_flyway_checksum.sql 后可以重新启用此选项
+    validate-on-migrate: false
     
   servlet:
     multipart:
@@ -77,40 +80,12 @@ real:
       key: secretKey
     # 回调地址（需要配置为公网可访问的地址，第三方系统查询完成后会调用此地址）
     callback-url: https://sandbox-domain.com/yunkeji/api/callback/real-estate
+    # 每次查询的实际成本价（用于校验：用户单价不能低于此成本价，防止亏损）
+    cost-price: 500.00
       
 jwt:
   secret: mySecretKey
   expiration: 86400
-
-wechat:
-  pay:
-    # 沙箱：请替换为沙箱商户号
-    mchid: your_sandbox_mchid_here
-    # 沙箱：绑定的公众号/小程序/应用的 appid
-    appid: your_sandbox_appid_here
-    # 沙箱：API v3 密钥（32位）
-    api-v3-key: your_sandbox_api_v3_key_32_chars
-    # 沙箱：商户证书私钥路径
-    private-key-path: classpath:certs/apiclient_key_sandbox.pem
-    # 沙箱：商户证书序列号
-    serial-no: your_sandbox_cert_serial_no_here
-    # 微信支付回调通知地址（在商户平台也需要配置同样地址）
-    notify-url: https://sandbox-domain.com/yunkeji/api/pay/wechat/notify
-    # 交易描述，会显示在支付详情中
-    description: 不动产查询服务（沙箱）
-
-alipay:
-  pay:
-    # 支付宝沙箱网关
-    gateway-url: https://openapi-sandbox.dl.alipaydev.com/gateway.do
-    app-id: your_sandbox_app_id
-    private-key: |
-      your_sandbox_private_key_here
-    alipay-public-key: |
-      your_sandbox_alipay_public_key_here
-    notify-url: https://sandbox-domain.com/yunkeji/api/pay/alipay/notify
-    sign-type: RSA2
-    description: 不动产查询服务（沙箱）
 
 # 客服联系方式配置
 contact:

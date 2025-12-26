@@ -69,42 +69,13 @@ real:
     api:
       url: http://8.137.70.50:81
     access:
-      key: accessKey
+      key: f5905089dea3d26505924463f7e03042
     secret:
-      key: secretKey
+      key: 4e5294d1b10944e0b42f5259724cf78b
       
 jwt:
   secret: mySecretKey
   expiration: 86400
-
-wechat:
-  pay:
-    # 微信商户号（mchid）
-    mchid: 1734747667
-    # 绑定的公众号/小程序/应用的 appid
-    appid: wx799190da48964ee8
-    # API v3 密钥，用于签名/解密（32位）
-    api-v3-key: PUB_KEY_ID_0117347476672025121100191625001800
-    # 商户证书私钥路径，一般放在 resources/certs 下
-    private-key-path: classpath:certs/apiclient_key.pem
-    # 商户证书序列号
-    serial-no: your_cert_serial_no_here
-    # 微信支付回调通知地址（在商户平台也需要配置同样地址）
-    notify-url: https://your-domain.com/yunkeji/api/pay/wechat/notify
-    # 交易描述，会显示在支付详情中
-    description: 不动产查询服务
-
-alipay:
-  pay:
-    gateway-url: https://openapi.alipay.com/gateway.do
-    app-id: 2021006114682869
-    private-key: |
-     MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCyglj4Yqnz39cJVdVNmxQpyJ9lVWc/D/xWB0lOeMtdo9eXxHxqu4GjDuZy/qF6QFMa+bNO1GWFy1V6Mpw541W3OxKTbPZPdQS20k8G/jFoadPlzeqaHfc0b/GuD7J3LJ/XJmhVuZtVcLX6M6Y1oMseZlJzFw7w2BTH7Sbxbz+Isl8my/tAhSDPav2U1O+/1f7RpSonuamiDnVA/JwVgQKsvz0vJ+BpSpMaapRRh/PG11N+HQV0JgZ/NQFbEoi9he86B3N9OGKFLBmRSqpQnUMlPJ9JDwpVbXxxHlJ5M5xfI2pBKfDLA1MNm+Ld/e0lvpJls6y6mfN48PIBPwRgyr6JAgMBAAECggEBAKvrmeButZvowuN8xRge+UZcsBcaL3uu26nHDrUC5Wnj+Cl01Ra+S9ZM7WlnDwH8nY1nW2faa4R2Fna/83JVHiKARB20XWydGNMyrWXgvpj/A1NaBE41+fWIssye1ZStZ6wAk4+sWIvrJ3g28ibIG5fFmDa7yGnw0eLS5iS0rg3pjlM6h5N0xb3dhB8Vip6zy80hfwIdJ/1RzotaCkKMm8A8LrEaVFTWSSDverfpVG/ARHTTjsIIx5PaiaYEotFwtf0F0GuwNBjoAh6V5A+3nufs743CV/I0qlOcidPyw+zsC1uugK+79CZUb41s4l8OjwqyeyC+NNcfux041ghPEAECgYEA7fcDZfMJMfmCBNlmyuic0wmgG8R37PPR+GgAJiluSMLSKGDIvkK0DYz514ZrFGqaP92e0oAHMSBm0t+Rsv+fq5M9SKIcIgpdPDphPOrn/elHVCffBSB80sBhAzB/y1d59ba6E/ex0IUdmlBfhpUIA6iNc2baYAeIYl6OUZOT5wECgYEAwAnGvRMor1V6pKi743VtBxRvh++2NryeiybwKBhiZBJGQBwaTqGNVtsoL+C7Aqy2ehUfzcbiA0nidouaoIUggEnJ8UndwFuLd7qSwA7bP1B/dKKFuxAT37z14CBLkHYapWIKco9fFumz3tEKzKDJcxSnM73Dl80/cQJ3YjCrH4kCgYEA06lz/1mWoznweUm6kd8nptsX67rshPo2mIJBJ7CQZO3NKpcz12/TYX40uIzab/WGMCp7W3b/bqYIb6bmnNWce2tjBlkTNwALAEhZN2smYQX/KQ6x44iLHpZ5c/HOqdqsI2+dwab/JZ9RvnGhFj83OrHQ54Xj1ai9menLIypmUwECgYAy3yQfmECx2dIIZo6HXecI9hfpic3aSDMzp5f89yCxY8nqV8d8Rv2bIalOrZi8x6X7RzdKmsHqnxr3zlmi5kFK2sE9QxUUTOvwRqNzbzwTVK6+5gLJICQzo+n6enOqDC9Y2lTsLiDBgB1fDD9xH7Ld4n28jiuPPhbtR/r6LuxWCQKBgQCAKOy+Xnlic0zmj5Wp5/A38TrmnymX4yMZ3u/otnqROJ51kOl92BUfkImDA3VDL0bUwYw6ioKsAOrSwfo/dy5JHiV9KhdsONJ+FkY8ntqMnYYK2BNOZVmfA7sbLT2JAQwdq93CuA0d3yCGUCZMmmSFXwHY6TbReDwZbapk8NX2Gg==
-    alipay-public-key: |
-      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsoJY+GKp89/XCVXVTZsUKcifZVVnPw/8VgdJTnjLXaPXl8R8aruBow7mcv6hekBTGvmzTtRlhctVejKcOeNVtzsSk2z2T3UEttJPBv4xaGnT5c3qmh33NG/xrg+ydyyf1yZoVbmbVXC1+jOmNaDLHmZScxcO8NgUx+0m8W8/iLJfJsv7QIUgz2r9lNTvv9X+0aUqJ7mpog51QPycFYECrL89LyfgaUqTGmqUUYfzxtdTfh0FdCYGfzUBWxKIvYXvOgdzfThihSwZkUqqUJ1DJTyfSQ8KVW18cR5SeTOcXyNqQSnwywNTDZvi3f3tJb6SZbOsupnzePDyAT8EYMq+iQIDAQAB
-    notify-url: https://your-domain.com/yunkeji/api/pay/alipay/notify
-    sign-type: RSA2
-    description: 不动产查询服务
 
 # 客服联系方式配置
 contact:

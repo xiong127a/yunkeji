@@ -8,12 +8,12 @@ import org.yun.common.dto.RealEstateResultQueryRequest;
 public interface RealEstateService {
     
     /**
-     * 提交不动产查询请求
+     * 提交大数据查询请求
      */
     RealEstateQueryResponse submitRealEstateQuery(RealEstateQueryRequest request);
     
     /**
-     * 查询不动产结果
+     * 查询大数据结果
      */
     RealEstateQueryResponse queryRealEstateResult(RealEstateResultQueryRequest request);
 }

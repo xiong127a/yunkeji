@@ -1,7 +1,5 @@
 package org.yun.common.dto;
 
-import java.util.List;
-
 public class RealEstateQueryResponse {
     
     private Boolean success;

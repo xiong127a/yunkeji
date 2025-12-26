@@ -21,26 +21,34 @@
             class="records-table"
             empty-text="暂无查询记录"
           >
-        <el-table-column prop="id" label="ID" width="90" />
-        <el-table-column prop="name" label="姓名" width="140" />
-        <el-table-column prop="idCard" label="证件号" min-width="200" />
-        <el-table-column prop="requestNo" label="请求编号" min-width="200" />
-        <el-table-column label="状态" width="140">
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="name" label="姓名" width="120" />
+        <el-table-column prop="idCard" label="证件号" min-width="180" />
+        <el-table-column prop="requestNo" label="请求编号" min-width="180" />
+        <el-table-column label="状态" width="120">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="提交时间" min-width="180">
+        <el-table-column label="提交时间" min-width="160">
           <template #default="{ row }">
             {{ row.createdAt || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="反馈结果" min-width="220">
+        <el-table-column label="反馈结果 / 报告" min-width="160">
           <template #default="{ row }">
-            {{ row.result || '-' }}
+            <el-button
+              v-if="row.result && row.status === 'COMPLETED'"
+              type="primary"
+              link
+              @click="goReport(row)"
+            >
+              查看报告
+            </el-button>
+            <span v-else>{{ row.result || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="当前费用 (元)" min-width="180">
+        <el-table-column label="当前费用 (元)" min-width="150">
           <template #default="{ row }">
             <div v-if="editingRecordId === row.id" class="edit-fee-cell">
               <el-input-number
@@ -57,7 +65,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <div v-if="editingRecordId === row.id">
               <el-button
@@ -106,6 +114,12 @@
             <el-table-column prop="id" label="用户ID" width="90" />
             <el-table-column prop="username" label="用户名" min-width="140" />
             <el-table-column prop="email" label="邮箱" min-width="200" />
+            <el-table-column prop="parentId" label="上级用户ID" min-width="140">
+              <template #default="{ row }">
+                <span v-if="row.parentId">{{ row.parentId }}</span>
+                <span v-else>—</span>
+              </template>
+            </el-table-column>
             <el-table-column label="角色" width="120">
               <template #default="{ row }">
                 <el-tag :type="row.role === 'ADMIN' ? 'danger' : 'info'">{{ getRoleText(row.role) }}</el-tag>
@@ -114,6 +128,13 @@
             <el-table-column label="余额 (元)" min-width="160">
               <template #default="{ row }">
                 {{ formatCurrency(row.balance) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="信任状态" width="120">
+              <template #default="{ row }">
+                <el-tag :type="row.trusted ? 'success' : 'info'">
+                  {{ row.trusted ? '已信任' : '默认' }}
+                </el-tag>
               </template>
             </el-table-column>
             <el-table-column label="查询单价 (元)" min-width="180">
@@ -133,7 +154,7 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="320" fixed="right">
+            <el-table-column label="操作" width="420" fixed="right">
               <template #default="{ row }">
                 <div v-if="editingUserId === row.id">
                   <el-button
@@ -155,6 +176,22 @@
                 <div v-else class="user-actions">
                   <el-button size="small" type="primary" @click="startUserEdit(row)">编辑单价</el-button>
                   <el-button size="small" @click="openRechargeDialog(row)">储值</el-button>
+                  <el-button
+                    size="small"
+                    type="success"
+                    v-if="!row.trusted"
+                    @click="setTrust(row, true)"
+                  >
+                    设为信任
+                  </el-button>
+                  <el-button
+                    size="small"
+                    type="warning"
+                    v-else
+                    @click="setTrust(row, false)"
+                  >
+                    取消信任
+                  </el-button>
                 </div>
               </template>
             </el-table-column>
@@ -205,8 +242,11 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
 import AdminService from '@/services/AdminService'
 import AdminUserService from '@/services/AdminUserService'
+
+const router = useRouter()
 
 const activeTab = ref('records')
 
@@ -244,8 +284,7 @@ const getStatusType = (status) => {
     'PROCESSING': 'warning',
     'COMPLETED': 'success',
     'FAILED': 'danger',
-    'REJECTED': 'danger',
-    'PENDING_PAY': 'warning'
+    'REJECTED': 'danger'
   }
   return statusMap[status] || 'info'
 }
@@ -256,8 +295,7 @@ const getStatusText = (status) => {
     'PROCESSING': '处理中',
     'COMPLETED': '已完成',
     'FAILED': '失败',
-    'REJECTED': '已拒绝',
-    'PENDING_PAY': '待支付'
+    'REJECTED': '已拒绝'
   }
   return statusMap[status] || status || '未知'
 }
@@ -304,6 +342,10 @@ const saveFee = async (row) => {
   } finally {
     saving.value = false
   }
+}
+
+const goReport = (row) => {
+  router.push({ name: 'QueryDetail', params: { id: row.id } })
 }
 
 const loadUsers = async () => {
@@ -369,6 +411,16 @@ const confirmRecharge = async () => {
     ElMessage.error(error?.response?.data?.message || '充值失败')
   } finally {
     rechargeLoading.value = false
+  }
+}
+
+const setTrust = async (row, trusted) => {
+  try {
+    const updated = await AdminUserService.updateUserTrust(row.id, trusted)
+    users.value = users.value.map(u => (u.id === row.id ? updated : u))
+    ElMessage.success(trusted ? '已设为信任用户' : '已取消信任')
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || '更新信任状态失败')
   }
 }
 

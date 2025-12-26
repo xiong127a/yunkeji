@@ -5,21 +5,22 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.yun.common.dto.PayOrderDTO;
 import org.yun.common.dto.RealEstateFileDTO;
 import org.yun.common.dto.RealEstateQueryRecordDTO;
 import org.yun.common.dto.RealEstateQueryRequest;
 import org.yun.common.dto.RealEstateQueryResponse;
+import org.yun.common.dto.RechargeBalanceRequest;
 import org.yun.common.dto.UserResponse;
 import org.yun.common.util.JwtUtil;
 import org.yun.service.UserManagementService;
 import org.yun.service.UserService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
-@Tag(name = "用户管理", description = "用户不动产查询管理相关API")
+@Tag(name = "用户管理", description = "用户大数据查询管理相关API")
 public class UserManagementController {
     
     @Autowired
@@ -32,7 +33,7 @@ public class UserManagementController {
     private UserService userService;
     
     @PostMapping("/real-estate/query")
-    @Operation(summary = "提交不动产查询请求")
+    @Operation(summary = "提交大数据查询请求")
     public RealEstateQueryRecordDTO submitRealEstateQuery(
             @RequestHeader("Authorization") String token,
             @RequestBody RealEstateQueryRequest request) {
@@ -43,7 +44,7 @@ public class UserManagementController {
     }
     
     @PostMapping("/real-estate/query-with-files")
-    @Operation(summary = "提交不动产查询请求（带文件）")
+    @Operation(summary = "提交大数据查询请求（带文件）")
     public RealEstateQueryRecordDTO submitRealEstateQueryWithFiles(
             @RequestHeader("Authorization") String token,
             @RequestPart("request") RealEstateQueryRequest request,
@@ -54,50 +55,10 @@ public class UserManagementController {
         return userManagementService.submitRealEstateQueryWithFiles(userId, request, files);
     }
     
-    @PostMapping("/real-estate/query-direct-pay")
-    @Operation(summary = "提交不动产查询请求（扫码直付）")
-    public org.yun.common.dto.DirectPayOrderResponse submitRealEstateQueryDirectPay(
-            @RequestHeader("Authorization") String token,
-            @RequestBody RealEstateQueryRequest request,
-            @RequestParam(defaultValue = "WECHAT") String payChannel) {
-        String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
-        Long userId = jwtUtil.extractUserId(actualToken);
-        return userManagementService.createDirectPayQuery(userId, request, payChannel);
-    }
-    
-    @PostMapping("/real-estate/query-with-files-direct-pay")
-    @Operation(summary = "提交不动产查询请求（带文件，扫码直付）")
-    public org.yun.common.dto.DirectPayOrderResponse submitRealEstateQueryWithFilesDirectPay(
-            @RequestHeader("Authorization") String token,
-            @RequestPart("request") RealEstateQueryRequest request,
-            @RequestPart(value = "files", required = false) MultipartFile[] files,
-            @RequestParam(defaultValue = "WECHAT") String payChannel) {
-        String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
-        Long userId = jwtUtil.extractUserId(actualToken);
-        return userManagementService.createDirectPayQueryWithFiles(userId, request, files, payChannel);
-    }
-    
-    @GetMapping("/pay/orders/pending")
-    @Operation(summary = "获取当前用户待支付的订单")
-    public List<PayOrderDTO> getPendingPayOrders(@RequestHeader("Authorization") String token) {
-        String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
-        Long userId = jwtUtil.extractUserId(actualToken);
-        return userManagementService.getPendingPayOrders(userId);
-    }
-    
-    @PostMapping("/pay/orders/{orderId}/regenerate")
-    @Operation(summary = "重新生成扫码支付二维码")
-    public org.yun.common.dto.DirectPayOrderResponse regeneratePayOrder(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long orderId,
-            @RequestParam(required = false) String payChannel) {
-        String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
-        Long userId = jwtUtil.extractUserId(actualToken);
-        return userManagementService.regeneratePayOrder(userId, orderId, payChannel);
-    }
+    // 支付相关接口已关闭，系统仅支持余额扣费模式
     
     @GetMapping("/real-estate/result/{requestNo}")
-    @Operation(summary = "查询不动产结果")
+    @Operation(summary = "查询大数据结果")
     public RealEstateQueryResponse queryRealEstateResult(@PathVariable String requestNo) {
         return userManagementService.queryRealEstateResult(requestNo);
     }
@@ -138,23 +99,7 @@ public class UserManagementController {
         return userManagementService.refreshQueryResult(recordId);
     }
 
-    @DeleteMapping("/real-estate/records/{recordId}")
-    @Operation(summary = "删除待支付的查询记录")
-    public void deletePendingRecord(@RequestHeader("Authorization") String token,
-                                    @PathVariable Long recordId) {
-        String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
-        Long userId = jwtUtil.extractUserId(actualToken);
-        userManagementService.deletePendingRecord(userId, recordId);
-    }
-
-    @DeleteMapping("/pay/orders/{orderId}")
-    @Operation(summary = "删除待支付订单")
-    public void deletePendingOrder(@RequestHeader("Authorization") String token,
-                                   @PathVariable Long orderId) {
-        String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
-        Long userId = jwtUtil.extractUserId(actualToken);
-        userManagementService.deletePendingOrder(userId, orderId);
-    }
+    // 删除待支付记录 / 订单的接口已关闭（余额模式下不会产生待支付状态）
     
     @GetMapping("/real-estate/files/{fileId}/download")
     @Operation(summary = "下载查询记录关联的文件")
@@ -170,4 +115,15 @@ public class UserManagementController {
                 .headers(headers)
                 .body(data);
     }
+
+    @PostMapping("/subordinates/{childId}/transfer")
+    @Operation(summary = "父级为子级分配余额（先扣父级）")
+    public UserResponse transferToChild(@RequestHeader("Authorization") String token,
+                                        @PathVariable Long childId,
+                                        @RequestBody RechargeBalanceRequest request) {
+        String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+        Long parentId = jwtUtil.extractUserId(actualToken);
+        return userService.transferToChild(parentId, childId, request);
+    }
+
 }

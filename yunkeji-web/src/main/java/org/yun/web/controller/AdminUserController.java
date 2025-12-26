@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.yun.common.dto.RechargeBalanceRequest;
@@ -63,6 +64,34 @@ public class AdminUserController {
         }
         return updated;
     }
+
+    @PostMapping("/{id}/status")
+    @Operation(summary = "管理员更新用户状态")
+    public UserResponse updateUserStatus(@RequestHeader("Authorization") String token,
+                                         @PathVariable Long id,
+                                         @RequestBody java.util.Map<String, String> body) {
+        ensureAdmin(token);
+        String status = body != null ? body.get("status") : null;
+        UserResponse updated = userService.updateUserStatus(id, status);
+        if (updated == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在");
+        }
+        return updated;
+    }
+
+    @PostMapping("/{id}/trust")
+    @Operation(summary = "管理员更新用户信任标记")
+    public UserResponse updateUserTrust(@RequestHeader("Authorization") String token,
+                                        @PathVariable Long id,
+                                        @RequestBody java.util.Map<String, Boolean> body) {
+        ensureAdmin(token);
+        Boolean trusted = body != null ? body.get("trusted") : null;
+        UserResponse updated = userService.updateUserTrust(id, trusted);
+        if (updated == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在");
+        }
+        return updated;
+    }
     
     private void ensureAdmin(String authorizationHeader) {
         String token = authorizationHeader;
@@ -78,6 +107,18 @@ public class AdminUserController {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

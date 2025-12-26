@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 部署脚本
-# 用于在服务器上部署和启动整个云科记不动产查询系统
+# 用于在服务器上部署和启动整个云科记大数据查询系统
 
 APP_NAME="yunkeji"
 DEPLOY_DIR="/opt/${APP_NAME}"

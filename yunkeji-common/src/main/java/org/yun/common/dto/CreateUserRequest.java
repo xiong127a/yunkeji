@@ -7,6 +7,13 @@ public class CreateUserRequest {
     private String email;
     
     private String password;
+
+    /**
+     * 上级用户ID（可选）。
+     * - 为空：表示顶级用户（例如你自己或平台创建的一级代理）
+     * - 不为空：表示该用户的直属上级，用于多级分销
+     */
+    private Long parentId;
     
     // Getters and setters
     public String getUsername() {
@@ -31,5 +38,13 @@ public class CreateUserRequest {
     
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
     }
 }

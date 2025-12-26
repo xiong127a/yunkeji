@@ -31,3 +31,15 @@ public class UpdateQueryFeeRequest {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+

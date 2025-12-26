@@ -48,7 +48,7 @@ nohup java $JAVA_OPTS -Dspring.profiles.active=prod -jar $JAR_FILE > "$STDOUT_LO
 echo $! > "$PID_FILE"
 
 echo "$APP_NAME 应用启动成功 (PID: $(cat "$PID_FILE"))"
-echo "正在查看启动日志，按 Ctrl+C 停止查看日志..."
+echo "正在查看启动日志（最近200行），按 Ctrl+C 停止查看日志..."
 
-# 自动tail日志文件
-tail -f "$STDOUT_LOG" &
+# 只跟随一次日志：先输出最近200行，再持续跟随；放在前台，Ctrl+C 可退出
+tail -n 200 -F "$STDOUT_LOG"

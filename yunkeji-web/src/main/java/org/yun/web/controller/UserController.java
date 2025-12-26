@@ -3,19 +3,14 @@ package org.yun.web.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 import org.yun.common.dto.CreateUserRequest;
-import org.yun.common.dto.RechargeBalanceRequest;
-import org.yun.common.dto.UpdateUserPriceRequest;
 import org.yun.common.dto.UserResponse;
 import org.yun.service.UserService;
 
@@ -53,25 +48,5 @@ public class UserController {
         userService.deleteUser(id);
     }
     
-    @PutMapping("/{id}/price")
-    @Operation(summary = "更新用户查询单价")
-    public UserResponse updateUserPrice(@PathVariable Long id,
-                                        @RequestBody UpdateUserPriceRequest request) {
-        UserResponse updated = userService.updateUserPrice(id, request);
-        if (updated == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在");
-        }
-        return updated;
-    }
-    
-    @PutMapping("/{id}/recharge")
-    @Operation(summary = "为用户充值余额")
-    public UserResponse rechargeBalance(@PathVariable Long id,
-                                        @RequestBody RechargeBalanceRequest request) {
-        UserResponse updated = userService.rechargeBalance(id, request);
-        if (updated == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在");
-        }
-        return updated;
-    }
+    // 单价和充值操作仅允许管理员通过 AdminUserController 进行
 }

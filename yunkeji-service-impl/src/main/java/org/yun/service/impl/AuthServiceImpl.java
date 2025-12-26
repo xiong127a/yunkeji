@@ -86,17 +86,24 @@ public class AuthServiceImpl implements AuthService {
             return response;
         }
         
-        // 创建新用户
+        // 创建新用户（无层级，无邀请码）
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         // 密码加密存储
         user.setPassword(hashPassword(request.getPassword()));
         user.setRole("USER");
-        // 默认查询单价500，初始余额0
-        user.setQueryPrice(java.math.BigDecimal.valueOf(500));
         user.setBalance(java.math.BigDecimal.ZERO);
-        
+        user.setParentId(null);
+        user.setDepth(1);
+        user.setQueryPrice(java.math.BigDecimal.valueOf(500));
+        // 新注册账号默认待主管理员审批
+        user.setStatus("PENDING");
+        // 证件未提交
+        user.setKycStatus("UNSUBMITTED");
+        // 默认不信任
+        user.setTrusted(Boolean.FALSE);
+
         userMapper.insert(user);
         
         response.setSuccess(true);

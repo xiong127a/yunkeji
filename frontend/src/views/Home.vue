@@ -5,8 +5,8 @@
       <el-col :span="24" class="home-col">
         <div class="hero-section">
           <div class="hero-content">
-            <h1 class="hero-title">云科技不动产查询系统</h1>
-            <p class="hero-subtitle">便捷、安全、高效的不动产信息查询平台</p>
+            <h1 class="hero-title">云科技大数据查询系统</h1>
+            <p class="hero-subtitle">便捷、安全、高效的大数据信息查询平台</p>
             <!-- 未登录状态 -->
             <div class="hero-actions" v-if="!isLoggedIn">
               <el-button type="primary" size="large" @click="$router.push('/login')" class="hero-button">
@@ -57,7 +57,7 @@
       <el-col :span="24" class="features-col">
         <div class="section-title">
           <h2>核心功能</h2>
-          <p>为您提供全方位的不动产信息查询服务</p>
+          <p>为您提供全方位的大数据信息查询服务</p>
         </div>
         <el-row :gutter="30" class="features-grid">
           <el-col :span="8" v-for="(feature, index) in features" :key="index" class="feature-col">
@@ -78,8 +78,8 @@
       <el-col :span="24" class="cta-col">
         <el-card class="cta-card" shadow="never">
           <div class="cta-content">
-            <h2>开始您的不动产查询之旅</h2>
-            <p>立即注册，享受便捷的不动产信息查询服务</p>
+            <h2>开始您的大数据查询之旅</h2>
+            <p>立即注册，享受便捷的大数据信息查询服务</p>
             <div class="cta-actions">
               <el-button type="primary" size="large" @click="$router.push('/register')">
                 免费注册
@@ -95,7 +95,7 @@
         <el-card class="cta-card" shadow="never">
           <div class="cta-content">
             <h2>欢迎回来，{{ username }}！</h2>
-            <p>快速开始您的不动产查询服务</p>
+            <p>快速开始您的大数据查询服务</p>
             <div class="cta-actions">
               <el-button type="primary" size="large" @click="$router.push('/query')">
                 提交查询
@@ -130,7 +130,7 @@ export default {
       {
         icon: 'el-icon-search',
         title: '在线查询',
-        description: '随时随地提交不动产查询申请，无需排队等候'
+        description: '随时随地提交大数据查询申请，无需排队等候'
       },
       {
         icon: 'el-icon-upload',

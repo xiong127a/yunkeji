@@ -12,20 +12,20 @@ import org.yun.service.RealEstateService;
 
 @RestController
 @RequestMapping("/api/real-estate")
-@Tag(name = "不动产查询", description = "不动产信息查询相关API")
+@Tag(name = "大数据查询", description = "大数据信息查询相关API")
 public class RealEstateController {
     
     @Autowired
     private RealEstateService realEstateService;
     
     @PostMapping("/query")
-    @Operation(summary = "提交不动产查询请求")
+    @Operation(summary = "提交大数据查询请求")
     public RealEstateQueryResponse submitRealEstateQuery(@RequestBody RealEstateQueryRequest request) {
         return realEstateService.submitRealEstateQuery(request);
     }
     
     @PostMapping("/query-with-files")
-    @Operation(summary = "提交不动产查询请求（带文件）")
+    @Operation(summary = "提交大数据查询请求（带文件）")
     public RealEstateQueryResponse submitRealEstateQueryWithFiles(
             @RequestPart("request") RealEstateQueryRequest request,
             @RequestPart(value = "files", required = false) MultipartFile[] files) {
@@ -33,7 +33,7 @@ public class RealEstateController {
     }
     
     @PostMapping("/result")
-    @Operation(summary = "查询不动产结果")
+    @Operation(summary = "查询大数据结果")
     public RealEstateQueryResponse queryRealEstateResult(@RequestBody RealEstateResultQueryRequest request) {
         return realEstateService.queryRealEstateResult(request);
     }

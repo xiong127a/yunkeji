@@ -18,7 +18,7 @@ import java.util.*;
 import static org.yun.dao.table.RealEstateQueryRecordTableDef.REAL_ESTATE_QUERY_RECORD;
 
 /**
- * 不动产查询定时任务
+ * 大数据查询定时任务
  * 定时查询所有待查询的记录，避免线程阻塞
  */
 @Component
@@ -48,7 +48,7 @@ public class RealEstateQueryScheduler {
      */
     @Scheduled(fixedDelay = 600000) // 10分钟 = 600000毫秒
     public void queryPendingRecords() {
-        log.info("开始执行不动产查询定时任务（兜底方案）");
+        log.info("开始执行大数据查询定时任务（兜底方案）");
         
         try {
             // 计算30分钟前的时间

@@ -6,8 +6,8 @@
         <div class="register-illustration">
           <img src="@/assets/yunkeji-logo.jpg" alt="云科技logo" />
         </div>
-        <h2>加入云科技不动产查询系统</h2>
-        <p>快速注册，享受便捷的不动产信息查询服务</p>
+        <h2>加入云科技大数据查询系统</h2>
+        <p>快速注册，享受便捷的大数据信息查询服务</p>
       </div>
 
       <div class="register-right">
@@ -51,7 +51,7 @@
                 show-password
               />
             </el-form-item>
-            
+
             <el-form-item prop="confirmPassword">
               <el-input 
                 v-model="registerForm.confirmPassword" 

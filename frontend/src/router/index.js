@@ -48,6 +48,12 @@ const routes = [
     name: 'AdminQueryManagement',
     component: () => import('@/views/AdminQueryManagement.vue'),
     meta: { requiresAdmin: true }
+  },
+  {
+    path: '/sub-users',
+    name: 'SubUserManagement',
+    component: () => import('@/views/SubUserManagement.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -64,6 +70,11 @@ router.beforeEach((to, from, next) => {
     }
     if (!AuthService.isAdmin()) {
       next({ path: '/' })
+      return
+    }
+  } else if (to.meta?.requiresAuth) {
+    if (!AuthService.isAuthenticated()) {
+      next({ path: '/login' })
       return
     }
   }

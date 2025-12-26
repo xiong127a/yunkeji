@@ -21,7 +21,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/real-estate")
-@Tag(name = "管理员-不动产管理", description = "管理员管理不动产查询记录的API")
+@Tag(name = "管理员-大数据管理", description = "管理员管理大数据查询记录的API")
 public class AdminRealEstateController {
     
     @Autowired

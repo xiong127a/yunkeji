@@ -43,7 +43,6 @@
               <el-descriptions-item label="申请人">{{ record?.name || '-' }}</el-descriptions-item>
               <el-descriptions-item label="身份证号">{{ maskIdCard(record?.idCard) }}</el-descriptions-item>
               <el-descriptions-item label="查询费用">{{ formatCurrency(record?.queryFee) }}</el-descriptions-item>
-              <el-descriptions-item label="支付方式">{{ getPayModeText(record?.payMode) }}</el-descriptions-item>
             </el-descriptions>
           </el-card>
           
@@ -62,7 +61,7 @@
                   <div v-else class="report-container">
                     <!-- 报告头部 -->
                     <div class="report-header">
-                      <h3 class="report-title">不动产查询报告</h3>
+                      <h3 class="report-title">大数据查询报告</h3>
                       <div class="report-meta">
                         <span class="report-date">查询时间：{{ formatDateTime(record.updatedAt) }}</span>
                         <el-tag type="success" size="small">核查成功</el-tag>
@@ -123,22 +122,22 @@
                           </div>
                         </div>
                         
-                        <!-- 不动产列表 -->
+                        <!-- 大数据列表 -->
                         <div v-if="authResult.resultList && authResult.resultList.length > 0" class="property-list">
                           <div v-for="(property, pIndex) in authResult.resultList" :key="pIndex" class="property-card">
                             <div class="property-header">
-                              <h5 class="property-title">不动产 {{ pIndex + 1 }}</h5>
+                              <h5 class="property-title">大数据 {{ pIndex + 1 }}</h5>
                             </div>
                             <div class="property-content">
                               <div class="property-row">
                                 <div class="property-item">
-                                  <span class="property-label">不动产权证号：</span>
+                                  <span class="property-label">大数据信息编号：</span>
                                   <span class="property-value">{{ property.certNo || '-' }}</span>
                                 </div>
                               </div>
                               <div class="property-row">
                                 <div class="property-item">
-                                  <span class="property-label">不动产单元号：</span>
+                                  <span class="property-label">大数据信息单元号：</span>
                                   <span class="property-value">{{ property.unitNo || '-' }}</span>
                                 </div>
                               </div>
@@ -194,7 +193,7 @@
                           </div>
                         </div>
                         <div v-else class="no-property">
-                          <p>暂无不动产信息</p>
+                          <p>暂无大数据信息</p>
                         </div>
                       </div>
                     </div>
@@ -220,10 +219,6 @@
               </div>
               <div v-else-if="record.status === 'PROCESSING' || record.status === 'SUBMITTED'">
                 <p class="processing-text">查询正在处理中，请稍候...</p>
-                <p class="processing-tip">您可以点击右上角的"刷新结果"按钮主动获取最新状态</p>
-              </div>
-              <div v-else-if="record.status === 'PENDING_PAY'">
-                <p class="processing-text">等待支付中，请完成支付后查询将自动开始</p>
                 <p class="processing-tip">您可以点击右上角的"刷新结果"按钮主动获取最新状态</p>
               </div>
               <div v-else-if="record.status === 'FAILED'">
@@ -394,8 +389,7 @@ export default {
         'PROCESSING': 'warning',
         'COMPLETED': 'success',
         'FAILED': 'danger',
-        'REJECTED': 'danger',
-        'PENDING_PAY': 'warning'
+        'REJECTED': 'danger'
       }
       return statusMap[status] || 'info'
     }
@@ -406,8 +400,7 @@ export default {
         'PROCESSING': '处理中',
         'COMPLETED': '已完成',
         'FAILED': '失败',
-        'REJECTED': '已拒绝',
-        'PENDING_PAY': '待支付'
+        'REJECTED': '已拒绝'
       }
       return statusMap[status] || status || '未知'
     }
@@ -435,14 +428,6 @@ export default {
       const num = typeof value === 'number' ? value : Number(value)
       if (Number.isNaN(num)) return '¥0.00'
       return `¥${num.toFixed(2)}`
-    }
-    
-    const getPayModeText = (payMode) => {
-      const modeMap = {
-        'STORED_VALUE': '余额扣费',
-        'DIRECT_PAY': '扫码支付'
-      }
-      return modeMap[payMode] || payMode || '-'
     }
     
     const formatFileSize = (bytes) => {
@@ -504,7 +489,6 @@ export default {
       formatDateTime,
       maskIdCard,
       formatCurrency,
-      getPayModeText,
       formatFileSize,
       getAuthStateType,
       getAuthStateText,

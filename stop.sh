@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# 停止云科记不动产查询系统
+# 停止云科记大数据查询系统
 
-echo "正在停止云科记不动产查询系统..."
+echo "正在停止云科记大数据查询系统..."
 
 # 查找并终止Java进程
 pids=$(ps aux | grep "yunkeji-boot" | grep -v grep | awk '{print $2}')
